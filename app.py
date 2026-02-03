@@ -318,7 +318,7 @@ elif st.session_state.page == "Chatbot":
     HEADERS = {
         "Authorization": f"Bearer {st.secrets['OPENROUTER_API_KEY']}",
         "Content-Type": "application/json",
-        "HTTP-Referer": "http://localhost:8501",  # required by OpenRouter
+        "HTTP-Referer": "https://yshjqxefcadzvekjp5lbdp.streamlit.app/",
         "X-Title": "Sustainability Chatbot"
     }
 
@@ -331,7 +331,7 @@ elif st.session_state.page == "Chatbot":
     if st.button("Ask") and user_q.strip():
         with st.spinner("Thinking..."):
             payload = {
-                "model": "openai/gpt-3.5-turbo",  # free / cheap via OpenRouter
+                "model": "mistralai/mistral-7b-instruct",
                 "messages": [
                     {
                         "role": "system",
