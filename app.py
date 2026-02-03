@@ -317,7 +317,8 @@ def go(page):
 # ------------------ AI FUNCTION ------------------
 HF_API_KEY = st.secrets["HF_API_KEY"]
 
-API_URL = "https://api-inference.huggingface.co/models/google/flan-t5-large"
+API_URL = "https://api-inference.huggingface.co/models/groq/groq-1.5-12b-instruct"
+
 
 headers = {
     "Authorization": f"Bearer {HF_API_KEY}"
