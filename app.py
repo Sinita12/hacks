@@ -305,62 +305,65 @@ elif st.session_state.page == "GreenScore":
 # CHATBOT PAGE
 # -------------------------
 
-st.set_page_config(page_title="Eco App", layout="centered")
-
-# ------------------ NAVIGATION ------------------
-if "page" not in st.session_state:
-    st.session_state.page = "Home"
-
-def go(page):
-    st.session_state.page = page
-
-# ------------------ AI FUNCTION ------------------
-HF_API_KEY = st.secrets["HF_API_KEY"]
-
-API_URL = "https://api-inference.huggingface.co/models/groq/groq-1.5-12b-instruct"
-
-
-headers = {
-    "Authorization": f"Bearer {HF_API_KEY}"
-}
-
-def ask_ai(question):
-    payload = {
-        "inputs": f"Answer clearly and simply: {question}"
-    }
-
-    try:
-        response = requests.post(API_URL, headers=headers, json=payload, timeout=30)
-
-        if response.status_code != 200:
-            return "⚠️ AI service is busy. Please try again in a minute."
-
-        data = response.json()
-        return data[0]["generated_text"]
-
-    except Exception:
-        return "⚠️ Unable to connect to AI service."
-
-# ------------------ PAGES ------------------
-
-
-
-
-
-# 🤖 CHATBOT
+# -------------------------
 elif st.session_state.page == "Chatbot":
-    st.button("← Back", on_click=go, args=("Home",))
+
+
+    st.button("← Back to Home", on_click=go, args=("Home",))
     st.title("🤖 AI Chatbot")
 
-    st.write("Ask about sustainability, materials, or eco-friendly alternatives.")
+    st.write("Ask a question about sustainability, ingredients, and alternatives.")
+
+    # --- OpenRouter setup ---
+    API_URL = "https://openrouter.ai/api/v1/chat/completions"
+    HEADERS = {
+        "Authorization": f"Bearer {st.secrets['OPENROUTER_API_KEY']}",
+        "Content-Type": "application/json",
+        "HTTP-Referer": "http://localhost:8501",  # required by OpenRouter
+        "X-Title": "Sustainability Chatbot"
+    }
+
+    # Store chat history
+    if "chat_history" not in st.session_state:
+        st.session_state.chat_history = []
 
     user_q = st.text_input("Your question")
 
-    if st.button("Ask") and user_q:
-        with st.spinner("Thinking... (first request may take ~30s)"):
-            answer = ask_ai(user_q)
-            st.success(answer)
-# -------------------------
+    if st.button("Ask") and user_q.strip():
+        with st.spinner("Thinking..."):
+            payload = {
+                "model": "openai/gpt-3.5-turbo",  # free / cheap via OpenRouter
+                "messages": [
+                    {
+                        "role": "system",
+                        "content": "You are a helpful assistant focused on sustainability and eco-friendly choices."
+                    },
+                    {
+                        "role": "user",
+                        "content": user_q
+                    }
+                ],
+                "temperature": 0.7,
+                "max_tokens": 300
+            }
+
+            response = requests.post(API_URL, headers=HEADERS, json=payload)
+
+            if response.status_code == 200:
+                ai_reply = response.json()["choices"][0]["message"]["content"]
+            else:
+                ai_reply = f"⚠️ Error {response.status_code}: AI service unavailable."
+
+        st.session_state.chat_history.append(("You", user_q))
+        st.session_state.chat_history.append(("AI", ai_reply))
+
+    # Display conversation
+    for speaker, msg in st.session_state.chat_history:
+        if speaker == "You":
+            st.markdown(f"**🧑 You:** {msg}")
+        else:
+            st.markdown(f"**🤖 AI:** {msg}")
+
 # TOTAL IMPACT PAGE
 # -------------------------
 elif st.session_state.page == "Impact":
