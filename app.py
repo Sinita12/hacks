@@ -305,43 +305,60 @@ elif st.session_state.page == "GreenScore":
 # CHATBOT PAGE
 # -------------------------
 
-elif st.session_state.page == "Chatbot":
-  
+st.set_page_config(page_title="Eco App", layout="centered")
 
-    st.button("← Back to Home", on_click=go, args=("Home",))
-    st.title("🤖 AI Chatbot")
-    st.write("Ask a question about sustainability, ingredients, and alternatives.")
+# ------------------ NAVIGATION ------------------
+if "page" not in st.session_state:
+    st.session_state.page = "Home"
 
-    API_URL = "https://api-inference.huggingface.co/models/mistralai/Mistral-7B-Instruct-v0.2"
-    HEADERS = {
-        "Authorization": f"Bearer {st.secrets['HF_API_KEY']}"
+def go(page):
+    st.session_state.page = page
+
+# ------------------ AI FUNCTION ------------------
+HF_API_KEY = st.secrets["HF_API_KEY"]
+
+API_URL = "https://api-inference.huggingface.co/models/google/flan-t5-large"
+
+headers = {
+    "Authorization": f"Bearer {HF_API_KEY}"
+}
+
+def ask_ai(question):
+    payload = {
+        "inputs": f"Answer clearly and simply: {question}"
     }
 
-    if "chat_history" not in st.session_state:
-        st.session_state.chat_history = []
+    try:
+        response = requests.post(API_URL, headers=headers, json=payload, timeout=30)
+
+        if response.status_code != 200:
+            return "⚠️ AI service is busy. Please try again in a minute."
+
+        data = response.json()
+        return data[0]["generated_text"]
+
+    except Exception:
+        return "⚠️ Unable to connect to AI service."
+
+# ------------------ PAGES ------------------
+
+
+
+
+
+# 🤖 CHATBOT
+elif st.session_state.page == "Chatbot":
+    st.button("← Back", on_click=go, args=("Home",))
+    st.title("🤖 AI Chatbot")
+
+    st.write("Ask about sustainability, materials, or eco-friendly alternatives.")
 
     user_q = st.text_input("Your question")
 
-    if st.button("Ask") and user_q.strip():
-        with st.spinner("Thinking..."):
-            response = requests.post(
-                API_URL,
-                headers=HEADERS,
-                json={"inputs": f"Answer clearly:\n{user_q}"}
-            )
-
-            if response.status_code == 200:
-                ai_reply = response.json()[0]["generated_text"]
-            else:
-                ai_reply = "⚠️ AI service unavailable. Try again."
-
-        st.session_state.chat_history.append(("You", user_q))
-        st.session_state.chat_history.append(("AI", ai_reply))
-
-    for speaker, msg in st.session_state.chat_history:
-        st.markdown(f"**{speaker}:** {msg}")
-
-
+    if st.button("Ask") and user_q:
+        with st.spinner("Thinking... (first request may take ~30s)"):
+            answer = ask_ai(user_q)
+            st.success(answer)
 # -------------------------
 # TOTAL IMPACT PAGE
 # -------------------------
