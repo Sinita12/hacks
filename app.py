@@ -810,7 +810,11 @@ elif st.session_state.page == "Impact Dashboard":
         # =============================
         # 🔄 PRODUCT COMPARISON
         # =============================
-        st.markdown("## 🔄 Compare Your Products")
+        # =============================
+        # 🔄 STACKED PRODUCT COMPARISON
+        # =============================
+        st.markdown("## 🔄 Compare Products by Impact")
+        st.caption("See *why* one product is greener — not just the score 🌿")
 
         compare_products = st.multiselect(
             "Select products to compare",
@@ -821,25 +825,51 @@ elif st.session_state.page == "Impact Dashboard":
         if len(compare_products) >= 2:
             compare_df = history[history["Product"].isin(compare_products)]
 
-            comp_fig = px.bar(
-                compare_df,
+            # Normalize impacts for fair stacking
+            impact_cols = ["Carbon (kg)", "Water (L)", "Energy (MJ)", "Waste Score"]
+            normalized = compare_df.copy()
+
+            for col in impact_cols:
+                max_val = normalized[col].max()
+                normalized[col] = normalized[col] / max_val if max_val > 0 else 0
+
+            stacked_fig = px.bar(
+                normalized,
                 x="Product",
-                y="Eco Score",
-                color="Product",
-                text="Eco Score",
-                color_discrete_sequence=px.colors.qualitative.Set2
+                y=impact_cols,
+                title="Impact Breakdown per Product (Lower Total = Better)",
+                labels={"value": "Relative Impact"},
+                color_discrete_sequence=px.colors.sequential.Greens
             )
 
-            comp_fig.update_layout(
-                yaxis_title="Eco Score (Higher = Better)",
+            stacked_fig.update_layout(
+                barmode="stack",
+                yaxis_title="Relative Environmental Impact",
                 xaxis_title="",
-                showlegend=False
+                legend_title="Impact Type",
+                height=450
             )
 
-            st.plotly_chart(comp_fig, use_container_width=True)
+            st.plotly_chart(stacked_fig, use_container_width=True)
 
-            best = compare_df.sort_values("Eco Score", ascending=False).iloc[0]
-            worst = compare_df.sort_values("Eco Score").iloc[0]
+            # =============================
+            # 🧠 INTERPRETATION
+            # =============================
+            total_impact = normalized.copy()
+            total_impact["Total Impact"] = total_impact[impact_cols].sum(axis=1)
+
+            best = total_impact.sort_values("Total Impact").iloc[0]
+            worst = total_impact.sort_values("Total Impact", ascending=False).iloc[0]
+
+            st.markdown(f"""
+🌟 **Lowest overall impact:** **{best['Product']}**  
+⚠️ **Highest combined impact:** **{worst['Product']}**
+
+💡 *The taller the bar, the heavier the footprint — stacked layers show what hurts the most.*
+""")
+        else:
+            st.info("Select at least two products to compare 🌱")
+
 
             st.markdown(f"""
 🌟 **Best choice:** **{best['Product']}** (Eco Score {best['Eco Score']})  
