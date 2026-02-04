@@ -840,6 +840,7 @@ elif st.session_state.page == "Impact Dashboard":
         st.warning("⚠️ Improving — small swaps go a long way")
     else:
         st.error("❗ High Impact — time for greener upgrades")
+
     if len(history) >= 5:
         st.success("📦 Habit Builder — consistent tracking")
 
@@ -857,9 +858,6 @@ elif st.session_state.page == "Impact Dashboard":
     if st.button("🗑️ Clear Impact History"):
         st.session_state.impact_history = history.iloc[0:0]
         st.warning("Impact history cleared.")
-
-
-
 
 
 # -------------------------
