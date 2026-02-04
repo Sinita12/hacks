@@ -747,20 +747,6 @@ elif st.session_state.page == "Impact Dashboard":
     st.caption("A living story of how your choices shape the planet 🌱")
 
     # =============================
-    # 🗑️ CLEAR HISTORY (MOVED UP)
-    # =============================
-    if "impact_history" in st.session_state and not st.session_state.impact_history.empty:
-        if st.button("🗑️ Clear Impact History"):
-            st.session_state.impact_history = st.session_state.impact_history.iloc[0:0]
-
-            # reset logging guards if present
-            if "logged_keys" in st.session_state:
-                st.session_state.logged_keys.clear()
-
-            st.success("Impact history cleared 🌱")
-            st.rerun()
-
-    # =============================
     # REQUIRE HISTORY
     # =============================
     if "impact_history" not in st.session_state or st.session_state.impact_history.empty:
@@ -823,6 +809,7 @@ elif st.session_state.page == "Impact Dashboard":
         markers=True,
         color_discrete_sequence=["#22c55e"]
     )
+
     trend_fig.update_layout(
         xaxis_title="Order of products analysed",
         yaxis_title="Eco Score"
@@ -921,6 +908,17 @@ elif st.session_state.page == "Impact Dashboard":
     # =============================
     st.markdown("## 📜 Your Impact Log")
     st.dataframe(history[::-1], use_container_width=True)
+
+    if st.button("🗑️ Clear Impact History"):
+        st.session_state.impact_history = st.session_state.impact_history.iloc[0:0]
+
+        # 🔑 also reset logging guards
+        if "logged_keys" in st.session_state:
+            st.session_state.logged_keys.clear()
+
+        st.success("Impact history cleared 🌱")
+        st.rerun()
+
 
 
 
