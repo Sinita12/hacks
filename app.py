@@ -210,7 +210,7 @@ with c1:
 with c2:
     st.button("🤖 AI Chatbot", use_container_width=True, on_click=go, args=("Chatbot",))
 with c3:
-    st.button("🌏Total Impact", use_container_width=True, on_click=go, args=("Impact",))
+    st.button("🌏Impact Dashboard", use_container_width=True, on_click=go, args=("Impact Dashboard",))
 with c4:
     st.button("ℹ️ About", use_container_width=True, on_click=go, args=("About",))
 
@@ -365,11 +365,168 @@ elif st.session_state.page == "Chatbot":
 
 # TOTAL IMPACT PAGE
 # -------------------------
-elif st.session_state.page == "Impact":
-    st.button("← Back to Home", on_click=go, args=("Home",))
-    st.title("🌏Total Impact")
+elif st.session_state.page == "Impact Dashboard":
+    import pandas as pd
+    import matplotlib.pyplot as plt
 
-    st.write("Find out the environmental impact of your choices, and discover ways to increase your eco-friendliness")
+    st.button("← Back to Home", on_click=go, args=("Home",))
+    st.title("🌍 Your Impact Dashboard")
+
+    st.write(
+        "Track your sustainability impact over time, compare products, "
+        "and earn badges for better choices."
+    )
+
+    # =============================
+    # Initialize impact history
+    # =============================
+    if "impact_history" not in st.session_state:
+        st.session_state.impact_history = pd.DataFrame(columns=[
+            "Product",
+            "Category",
+            "Eco Score",
+            "Carbon (kg)",
+            "Water (L)",
+            "Energy (MJ)",
+            "Waste Score"
+        ])
+
+    # =============================
+    # Add product to history
+    # =============================
+    st.subheader("➕ Add a product you used/bought")
+
+    product_name = st.selectbox(
+        "Choose product",
+        summary_df["name"].unique()
+    )
+
+    product_row = summary_df[summary_df["name"] == product_name].iloc[0]
+
+    if st.button("Add to Impact History"):
+        new_row = {
+            "Product": product_name,
+            "Category": product_row["category"],
+            "Eco Score": product_row["eco_score"],
+            "Carbon (kg)": product_row["total_carbon_kg"],
+            "Water (L)": product_row["total_water_L"],
+            "Energy (MJ)": product_row["total_energy_MJ"],
+            "Waste Score": product_row["total_waste_score"]
+        }
+
+        st.session_state.impact_history = pd.concat(
+            [st.session_state.impact_history, pd.DataFrame([new_row])],
+            ignore_index=True
+        )
+
+        st.success("Product added to your impact history!")
+
+    # =============================
+    # If history exists
+    # =============================
+    if not st.session_state.impact_history.empty:
+        history = st.session_state.impact_history
+
+        st.divider()
+
+        # =============================
+        # Overall Impact Score
+        # =============================
+        avg_score = history["Eco Score"].mean()
+
+        st.subheader("🌱 Your Overall Impact")
+        st.metric(
+            "Average GreenScore",
+            f"{avg_score:.1f} / 100"
+        )
+
+        # =============================
+        # BADGES
+        # =============================
+        st.subheader("🏆 Your Badges")
+
+        if avg_score >= 80:
+            st.success("🌟 Eco Hero – Your choices are excellent!")
+        elif avg_score >= 65:
+            st.info("👍 Conscious Consumer – You’re doing well!")
+        elif avg_score >= 50:
+            st.warning("⚠️ Improving – Try greener alternatives")
+        else:
+            st.error("❗ High Impact – Significant room for improvement")
+
+        if len(history) >= 5:
+            st.success("📦 Consistent Tracker – 5+ products tracked")
+
+        if (history["Eco Score"] >= 80).sum() >= 3:
+            st.success("🌿 Green Champion – 3+ high-eco products chosen")
+
+        # =============================
+        # EcoScore Trend
+        # =============================
+        st.subheader("📈 GreenScore Over Time")
+        st.line_chart(history["Eco Score"])
+
+        # =============================
+        # Impact Breakdown (averages)
+        # =============================
+        st.subheader("📊 Average Environmental Impact")
+
+        impact_avg = history[[
+            "Carbon (kg)",
+            "Water (L)",
+            "Energy (MJ)",
+            "Waste Score"
+        ]].mean()
+
+        fig, ax = plt.subplots()
+        impact_avg.plot(kind="bar", ax=ax)
+        ax.set_ylabel("Impact")
+        ax.set_title("Average Impact per Product")
+        st.pyplot(fig)
+
+        # =============================
+        # PRODUCT COMPARISON
+        # =============================
+        st.subheader("🔄 Compare Products")
+
+        compare_products = st.multiselect(
+            "Select products to compare",
+            history["Product"].unique(),
+            default=history["Product"].unique()[:2]
+        )
+
+        if len(compare_products) >= 2:
+            compare_df = history[history["Product"].isin(compare_products)]
+
+            fig, ax = plt.subplots()
+            for product in compare_products:
+                ax.plot(
+                    compare_df[compare_df["Product"] == product]["Eco Score"].values,
+                    label=product,
+                    marker="o"
+                )
+
+            ax.set_ylabel("Eco Score")
+            ax.set_title("Eco Score Comparison")
+            ax.legend()
+            st.pyplot(fig)
+
+        # =============================
+        # HISTORY TABLE
+        # =============================
+        st.subheader("📜 Your Product History")
+        st.dataframe(history, use_container_width=True)
+
+        # =============================
+        # Clear history
+        # =============================
+        if st.button("🗑️ Clear Impact History"):
+            st.session_state.impact_history = history.iloc[0:0]
+            st.warning("Impact history cleared.")
+
+    else:
+        st.info("No products added yet. Start tracking to see your impact!")
+
 # -------------------------
 # ABOUT PAGE
 # -------------------------
