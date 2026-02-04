@@ -620,38 +620,39 @@ elif st.session_state.page == "GreenScore":
 elif st.session_state.page == "Chatbot":
   
 
-    st.button("← Back to Home", on_click=go, args=("Home",))
-    st.title("🤖 AI Chatbot")
-    st.write("Ask a question about sustainability, ingredients, and alternatives.")
+from openai import OpenAI
+import streamlit as st
 
-    API_URL = "https://api-inference.huggingface.co/models/mistralai/Mistral-7B-Instruct-v0.2"
-    HEADERS = {
-        "Authorization": f"Bearer {st.secrets['HF_API_KEY']}"
-    }
+st.title("ChatGPT-like clone")
 
-    if "chat_history" not in st.session_state:
-        st.session_state.chat_history = []
+client = OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
 
-    user_q = st.text_input("Your question")
+if "openai_model" not in st.session_state:
+    st.session_state["openai_model"] = "gpt-3.5-turbo"
 
-    if st.button("Ask") and user_q.strip():
-        with st.spinner("Thinking..."):
-            response = requests.post(
-                API_URL,
-                headers=HEADERS,
-                json={"inputs": f"Answer clearly:\n{user_q}"}
-            )
+if "messages" not in st.session_state:
+    st.session_state.messages = []
 
-            if response.status_code == 200:
-                ai_reply = response.json()[0]["generated_text"]
-            else:
-                ai_reply = "⚠️ AI service unavailable. Try again."
+for message in st.session_state.messages:
+    with st.chat_message(message["role"]):
+        st.markdown(message["content"])
 
-        st.session_state.chat_history.append(("You", user_q))
-        st.session_state.chat_history.append(("AI", ai_reply))
+if prompt := st.chat_input("What is up?"):
+    st.session_state.messages.append({"role": "user", "content": prompt})
+    with st.chat_message("user"):
+        st.markdown(prompt)
 
-    for speaker, msg in st.session_state.chat_history:
-        st.markdown(f"**{speaker}:** {msg}")
+    with st.chat_message("assistant"):
+        stream = client.chat.completions.create(
+            model=st.session_state["openai_model"],
+            messages=[
+                {"role": m["role"], "content": m["content"]}
+                for m in st.session_state.messages
+            ],
+            stream=True,
+        )
+        response = st.write_stream(stream)
+    st.session_state.messages.append({"role": "assistant", "content": response})
 
 
 # -------------------------
