@@ -909,8 +909,14 @@ elif st.session_state.page == "Impact Dashboard":
     st.dataframe(history[::-1], use_container_width=True)
 
     if st.button("🗑️ Clear Impact History"):
-        st.session_state.impact_history = history.iloc[0:0]
-        st.success("Impact history cleared 🌱")
+    st.session_state.impact_history = st.session_state.impact_history.iloc[0:0]
+
+    # 🔑 also reset logging guards
+    if "logged_keys" in st.session_state:
+        st.session_state.logged_keys.clear()
+
+    st.success("Impact history cleared 🌱")
+    st.rerun()
 
 
 
