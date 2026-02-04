@@ -816,18 +816,19 @@ elif st.session_state.page == "Impact Dashboard":
     )
 
     st.plotly_chart(trend_fig, use_container_width=True)
+    if len(history) >= 2:
+            delta = history["Eco Score"].iloc[-1] - history["Eco Score"].iloc[0]
 
-   if len(history) >= 2:
-        delta = history["Eco Score"].iloc[-1] - history["Eco Score"].iloc[0]
-
-        if delta > 5:
+            if delta > 5:
                 st.success(f"📈 Your EcoScore improved by **{delta:.1f} points** — your choices are getting greener 🌿")
-        elif delta < -5:
+            elif delta < -5:
                 st.warning(f"📉 Your EcoScore dropped by **{abs(delta):.1f} points** — consider greener swaps 🔄")
-        else:
+            else:
                 st.info("➖ Your EcoScore has stayed fairly stable — consistency is forming 🌱")
 
-    st.divider()
+        st.divider()
+
+   
 
     # =============================
     # 📊 AVERAGE IMPACT BREAKDOWN
