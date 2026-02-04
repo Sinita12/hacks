@@ -659,45 +659,39 @@ elif st.session_state.page == "Chatbot":
 # -------------------------
 elif st.session_state.page == "Impact Dashboard":
     import pandas as pd
+    import plotly.graph_objects as go
+    import plotly.express as px
 
     st.button("← Back to Home", on_click=go, args=("Home",))
     st.title("🌍 Your Sustainability Impact")
-    st.caption("A personal overview of how your choices affect the planet over time")
+    st.caption("A personal snapshot of how your daily choices affect the planet")
 
     # =============================
-    # Initialize history
+    # INIT HISTORY
     # =============================
     if "impact_history" not in st.session_state:
         st.session_state.impact_history = pd.DataFrame(columns=[
-            "Product",
-            "Category",
-            "Eco Score",
-            "Carbon (kg)",
-            "Water (L)",
-            "Energy (MJ)",
-            "Waste Score"
+            "Product", "Category", "Eco Score",
+            "Carbon (kg)", "Water (L)", "Energy (MJ)", "Waste Score"
         ])
 
     # =============================
-    # ADD PRODUCT (compact + calm)
+    # ADD PRODUCT
     # =============================
-    st.markdown("### ➕ Log a Product You Used")
+    st.markdown("### ➕ Log a Product")
 
-    add_col1, add_col2 = st.columns([3, 1])
-
-    with add_col1:
+    col1, col2 = st.columns([3, 1])
+    with col1:
         product_name = st.selectbox(
-            "Product",
+            "Choose product",
             summary_df["name"].unique(),
             label_visibility="collapsed"
         )
+    with col2:
+        add_btn = st.button("Add")
 
-    with add_col2:
-        add_clicked = st.button("➕ Add")
-
-    if add_clicked:
+    if add_btn:
         row = summary_df[summary_df["name"] == product_name].iloc[0]
-
         st.session_state.impact_history = pd.concat([
             st.session_state.impact_history,
             pd.DataFrame([{
@@ -711,7 +705,7 @@ elif st.session_state.page == "Impact Dashboard":
             }])
         ], ignore_index=True)
 
-        st.success("Added to your impact log 🌱")
+        st.success("Logged 🌱")
 
     # =============================
     # DASHBOARD CONTENT
@@ -722,123 +716,131 @@ elif st.session_state.page == "Impact Dashboard":
         st.divider()
 
         # =============================
-        # SECTION 1 — BIG PICTURE
+        # BIG SUMMARY
         # =============================
-        st.markdown("## 🌱 Your Overall Impact")
-
         avg_score = history["Eco Score"].mean()
-        total_items = len(history)
 
         c1, c2, c3 = st.columns(3)
         c1.metric("Average Impact Score", f"{avg_score:.1f} / 100")
-        c2.metric("Products Logged", total_items)
-        c3.metric("High-Eco Choices", f"{(history['Eco Score'] >= 80).sum()}")
-
-        st.caption(
-            "This reflects your **average environmental friendliness** across all logged products."
-        )
-
-        # =============================
-        # BADGES (VISUAL + FRIENDLY)
-        # =============================
-        st.markdown("### 🏆 Your Sustainability Badges")
-
-        if avg_score >= 80:
-            st.success("🌟 Eco Hero — consistently low-impact choices")
-        elif avg_score >= 65:
-            st.info("👍 Conscious Consumer — you're doing well overall")
-        elif avg_score >= 50:
-            st.warning("⚠️ On the Journey — improvement is possible")
-        else:
-            st.error("❗ High Impact Zone — try greener swaps")
-
-        if total_items >= 5:
-            st.success("📦 Habit Builder — tracking consistently")
-
-        if (history["Eco Score"] >= 80).sum() >= 3:
-            st.success("🌿 Green Champion — multiple excellent choices")
+        c2.metric("Products Logged", len(history))
+        c3.metric("High-Eco Choices", (history["Eco Score"] >= 80).sum())
 
         st.divider()
 
         # =============================
-        # SECTION 2 — TRENDS (TIME)
+        # 🌿 RADAR CHART (CORE FEATURE)
         # =============================
-        st.markdown("## 📈 How Your Choices Are Evolving")
+        st.markdown("## 🌿 Your Impact Profile")
+        st.caption("Lower area = lower environmental pressure")
 
-        st.caption(
-            "Each point represents a product you logged, in order."
+        # Normalize values for radar (0 = best, 1 = worst)
+        radar_vals = {
+            "Carbon": min(history["Carbon (kg)"].mean() / CARBON_CAP, 1),
+            "Water": min(history["Water (L)"].mean() / WATER_CAP, 1),
+            "Energy": min(history["Energy (MJ)"].mean() / ENERGY_CAP, 1),
+            "Waste": min(history["Waste Score"].mean() / WASTE_CAP, 1)
+        }
+
+        radar_fig = go.Figure()
+        radar_fig.add_trace(go.Scatterpolar(
+            r=list(radar_vals.values()),
+            theta=list(radar_vals.keys()),
+            fill="toself",
+            name="Your Impact",
+            line_color="#10b981"
+        ))
+
+        radar_fig.update_layout(
+            polar=dict(
+                radialaxis=dict(visible=True, range=[0, 1])
+            ),
+            showlegend=False,
+            height=400
         )
 
-        st.line_chart(history["Eco Score"])
+        st.plotly_chart(radar_fig, use_container_width=True)
 
         st.divider()
 
         # =============================
-        # SECTION 3 — AVERAGE IMPACT SHAPE
+        # 📈 ECOSCORE TREND
         # =============================
-        st.markdown("## 📊 What Drives Your Impact")
+        st.markdown("## 📈 Your EcoScore Over Time")
+        st.caption("Each point represents one product you logged")
+
+        trend_fig = px.line(
+            history.reset_index(),
+            x=history.reset_index().index,
+            y="Eco Score",
+            markers=True,
+            color_discrete_sequence=["#3b82f6"]
+        )
+        trend_fig.update_layout(
+            xaxis_title="Product Logged Order",
+            yaxis_title="Eco Score"
+        )
+
+        st.plotly_chart(trend_fig, use_container_width=True)
+
+        st.divider()
+
+        # =============================
+        # 📊 IMPACT BAR (CLEAR + SIMPLE)
+        # =============================
+        st.markdown("## 📊 What Affects You Most")
 
         impact_avg = history[[
-            "Carbon (kg)",
-            "Water (L)",
-            "Energy (MJ)",
-            "Waste Score"
-        ]].mean()
+            "Carbon (kg)", "Water (L)", "Energy (MJ)", "Waste Score"
+        ]].mean().reset_index()
 
-        st.bar_chart(impact_avg)
+        impact_avg.columns = ["Impact Type", "Average Value"]
 
-        st.caption(
-            "Higher bars = larger environmental pressure. "
-            "This helps identify what matters most in your footprint."
+        bar_fig = px.bar(
+            impact_avg,
+            x="Impact Type",
+            y="Average Value",
+            color="Impact Type",
+            color_discrete_sequence=px.colors.sequential.Greens
         )
+
+        st.plotly_chart(bar_fig, use_container_width=True)
 
         st.divider()
 
         # =============================
-        # SECTION 4 — PRODUCT COMPARISON
+        # 🏆 BADGES
         # =============================
-        st.markdown("## 🔄 Compare Products You’ve Used")
+        st.markdown("## 🏆 Your Sustainability Status")
 
-        compare_products = st.multiselect(
-            "Select products",
-            history["Product"].unique(),
-            default=list(history["Product"].unique())[:2]
-        )
+        if avg_score >= 80:
+            st.success("🌟 Eco Hero — exceptional low-impact lifestyle")
+        elif avg_score >= 65:
+            st.info("👍 Conscious Consumer — strong everyday choices")
+        elif avg_score >= 50:
+            st.warning("⚠️ Improving — small swaps can help a lot")
+        else:
+            st.error("❗ High Impact — consider greener alternatives")
 
-        if len(compare_products) >= 2:
-            compare_df = history[history["Product"].isin(compare_products)]
+        if len(history) >= 5:
+            st.success("📦 Habit Builder — consistent tracking")
 
-            pivot = compare_df.pivot_table(
-                index=compare_df.groupby("Product").cumcount(),
-                columns="Product",
-                values="Eco Score"
-            )
-
-            st.line_chart(pivot)
-
-            st.caption("Compare how different products stack up eco-wise.")
+        if (history["Eco Score"] >= 80).sum() >= 3:
+            st.success("🌿 Green Champion — multiple excellent picks")
 
         st.divider()
 
         # =============================
-        # SECTION 5 — HISTORY TABLE
+        # 📜 HISTORY
         # =============================
         st.markdown("## 📜 Your Impact Log")
-
-        st.dataframe(
-            history.sort_index(ascending=False),
-            use_container_width=True
-        )
+        st.dataframe(history[::-1], use_container_width=True)
 
         if st.button("🗑️ Clear Impact History"):
             st.session_state.impact_history = history.iloc[0:0]
             st.warning("Impact history cleared.")
 
     else:
-        st.info(
-            "No products logged yet.\n\n"
-            "Start adding products to see your personal impact dashboard 🌍"
-        )
+        st.info("Start logging products to unlock your impact dashboard 🌍")
 
 
 # -------------------------
