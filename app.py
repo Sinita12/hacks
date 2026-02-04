@@ -680,14 +680,10 @@ elif st.session_state.page == "Impact Dashboard":
     # REQUIRE PRODUCT FROM GREENSCORE
     # =============================
     if "selected_product" not in st.session_state:
-        st.warning("Please calculate a Green Score first 🌱")
+        st.info("Calculate a Green Score to start tracking your impact 🌍")
         st.stop()
 
     product_name = st.session_state.selected_product
-
-    st.markdown(
-        f"### 📦 Current product: **{product_name}**"
-    )
 
     # =============================
     # INIT HISTORY
@@ -701,9 +697,22 @@ elif st.session_state.page == "Impact Dashboard":
     # =============================
     # ADD PRODUCT (NO DROPDOWN)
     # =============================
-    st.markdown("### ➕ Log This Product")
+    st.markdown("### ➕ Log a Product You Used or Bought")
 
-    add_btn = st.button("Add 🌿")
+    col1, col2 = st.columns([3, 1])
+    with col1:
+        st.markdown(
+            f"""
+            <div style="padding:0.75rem;border-radius:0.5rem;
+            background-color:#f0fdf4;border:1px solid #bbf7d0">
+            📦 <strong>{product_name}</strong>
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
+
+    with col2:
+        add_btn = st.button("Add 🌿")
 
     if add_btn:
         row = summary_df[summary_df["name"] == product_name].iloc[0]
@@ -754,10 +763,15 @@ elif st.session_state.page == "Impact Dashboard":
 🌱 **Based on your tracked products, on average you create:**
 
 - 💨 **{avg_carbon:.2f} kg CO₂**  
-- 💧 **{avg_water:.1f} liters of water use**  
-- ⚡ **{avg_energy:.1f} MJ of energy demand**
+  *(≈ charging a phone {int(avg_carbon*120)} times 📱)*
 
-✨ *Your everyday purchases quietly shape the planet.*
+- 💧 **{avg_water:.1f} liters of water use**  
+  *(≈ {int(avg_water/50)} quick showers 🚿)*
+
+- ⚡ **{avg_energy:.1f} MJ of energy demand**  
+  *(≈ hours of household electricity 🔌)*
+
+✨ *Your everyday purchases quietly shape the planet — and awareness is the first win.*
 """)
 
         st.divider()
@@ -766,14 +780,31 @@ elif st.session_state.page == "Impact Dashboard":
         # 📈 ECOSCORE TREND
         # =============================
         st.markdown("## 📈 Your EcoScore Journey")
+        st.caption("Each point represents a product you logged")
 
         trend_fig = px.line(
             history.reset_index(),
             x=history.reset_index().index,
             y="Eco Score",
-            markers=True
+            markers=True,
+            color_discrete_sequence=["#22c55e"]
         )
+        trend_fig.update_layout(
+            xaxis_title="Order of products logged",
+            yaxis_title="Eco Score (higher is better)"
+        )
+
         st.plotly_chart(trend_fig, use_container_width=True)
+
+        if len(history) >= 2:
+            delta = history["Eco Score"].iloc[-1] - history["Eco Score"].iloc[0]
+
+            if delta > 5:
+                st.success(f"📈 Your EcoScore improved by **{delta:.1f} points** — your choices are getting greener 🌿")
+            elif delta < -5:
+                st.warning(f"📉 Your EcoScore dropped by **{abs(delta):.1f} points** — consider greener swaps 🔄")
+            else:
+                st.info("➖ Your EcoScore has stayed fairly stable — consistency is forming 🌱")
 
         st.divider()
 
@@ -791,7 +822,9 @@ elif st.session_state.page == "Impact Dashboard":
         bar_fig = px.bar(
             impact_avg,
             x="Impact Type",
-            y="Average Value"
+            y="Average Value",
+            color="Impact Type",
+            color_discrete_sequence=px.colors.sequential.Greens
         )
 
         st.plotly_chart(bar_fig, use_container_width=True)
@@ -802,6 +835,7 @@ elif st.session_state.page == "Impact Dashboard":
         # 🔄 STACKED PRODUCT COMPARISON
         # =============================
         st.markdown("## 🔄 Compare Products by Impact")
+        st.caption("See *why* one product is greener — not just the score 🌿")
 
         compare_products = st.multiselect(
             "Select products to compare",
@@ -823,10 +857,13 @@ elif st.session_state.page == "Impact Dashboard":
                 normalized,
                 x="Product",
                 y=impact_cols,
-                barmode="stack"
+                barmode="stack",
+                color_discrete_sequence=px.colors.sequential.Greens
             )
 
             st.plotly_chart(stacked_fig, use_container_width=True)
+        else:
+            st.info("Select at least two products to compare 🌱")
 
         st.divider()
 
@@ -836,13 +873,13 @@ elif st.session_state.page == "Impact Dashboard":
         st.markdown("## 🏆 Your Sustainability Status")
 
         if avg_score >= 80:
-            st.success("🌟 Eco Hero")
+            st.success("🌟 Eco Hero — nature is cheering you on")
         elif avg_score >= 65:
-            st.info("👍 Conscious Consumer")
+            st.info("👍 Conscious Consumer — strong everyday choices")
         elif avg_score >= 50:
-            st.warning("⚠️ Improving")
+            st.warning("⚠️ Improving — small swaps go a long way")
         else:
-            st.error("❗ High Impact")
+            st.error("❗ High Impact — time for greener upgrades")
 
         st.divider()
 
@@ -857,7 +894,7 @@ elif st.session_state.page == "Impact Dashboard":
             st.warning("Impact history cleared.")
 
     else:
-        st.info("Log your first product to unlock insights 🌍")
+        st.info("Start logging products to unlock your impact dashboard 🌍")
 
 
 # -------------------------
