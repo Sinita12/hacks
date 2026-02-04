@@ -419,14 +419,12 @@ if st.session_state.page == "Home":
 # -------------------------
 elif st.session_state.page == "GreenScore":
     import pandas as pd
-    import streamlit as st
 
     st.button("← Back to Home", on_click=go, args=("Home",))
-    st.title("🌱 GreenScore")
-    st.caption("Every product tells a story. Let’s read its footprint 🌍")
+    st.title("🌿 GreenScore")
 
     # =============================
-    # INIT GLOBAL HISTORY (ONCE)
+    # INIT LOGGING (MINIMAL ADD)
     # =============================
     if "impact_history" not in st.session_state:
         st.session_state.impact_history = pd.DataFrame(columns=[
@@ -434,108 +432,129 @@ elif st.session_state.page == "GreenScore":
             "Carbon (kg)", "Water (L)", "Energy (MJ)", "Waste Score"
         ])
 
-    # =============================
-    # PRODUCT SELECTION
-    # =============================
-    product_name = st.selectbox(
-        "Select a product to analyse",
-        summary_df["name"].unique()
-    )
-
-    row = summary_df[summary_df["name"] == product_name].iloc[0]
-
-    st.divider()
-
-    # =============================
-    # ECO SCORE DISPLAY
-    # =============================
-    eco_score = row["eco_score"]
-
-    st.markdown(
-        f"""
-        <div style="
-        padding:1rem;
-        border-radius:0.75rem;
-        background:linear-gradient(135deg,#ecfdf5,#f0fdf4);
-        border:1px solid #bbf7d0;
-        text-align:center;
-        ">
-        <h2 style="margin:0;color:#065f46">Eco Score</h2>
-        <h1 style="margin:0;color:#16a34a">{eco_score:.1f} / 100</h1>
-        </div>
-        """,
-        unsafe_allow_html=True
-    )
-
-    st.divider()
-
-    # =============================
-    # IMPACT BREAKDOWN
-    # =============================
-    c1, c2, c3, c4 = st.columns(4)
-
-    c1.metric("💨 Carbon", f"{row['total_carbon_kg']:.2f} kg")
-    c2.metric("💧 Water", f"{row['total_water_L']:.0f} L")
-    c3.metric("⚡ Energy", f"{row['total_energy_MJ']:.1f} MJ")
-    c4.metric("🗑️ Waste", f"{row['total_waste_score']:.1f}")
-
-    st.caption("Lower impact = happier planet 🌍")
-
-    st.divider()
-
-    # =============================
-    # LOG PRODUCT (IMMEDIATELY + ONCE)
-    # =============================
-    log_key = f"{product_name}_{eco_score}"
-
     if "logged_keys" not in st.session_state:
         st.session_state.logged_keys = set()
 
-    if log_key not in st.session_state.logged_keys:
-        new_row = pd.DataFrame([{
-            "Product": product_name,
-            "Category": row["category"],
-            "Eco Score": eco_score,
-            "Carbon (kg)": row["total_carbon_kg"],
-            "Water (L)": row["total_water_L"],
-            "Energy (MJ)": row["total_energy_MJ"],
-            "Waste Score": row["total_waste_score"]
-        }])
+    # -----------------------------
+    # Step 7: USER INPUT + DISPLAY
+    # -----------------------------
+    product_input = st.selectbox(
+        "🔍 Search for a product",
+        options=sorted(summary_df['name'].unique()),
+        index=None,
+        placeholder="Start typing to search..."
+    )     
 
-        st.session_state.impact_history = pd.concat(
-            [st.session_state.impact_history, new_row],
-            ignore_index=True
-        )
+    if product_input:
+        result = summary_df[summary_df['name'] == product_input]
+        st.session_state.selected_product = product_input
 
-        st.session_state.logged_keys.add(log_key)
+        if result.empty:
+            st.error("❌ Product not found in database.")
+        else:
+            r = result.iloc[0]
 
-        st.success("🌱 Added to your impact journey")
-    else:
-        st.info("Already counted — this choice is remembered 🌿")
+            st.divider()
 
-    st.divider()
+            # ---------- ECO SCORE ----------
+            st.markdown("### 🌿 Eco Score")
 
-    # =============================
-    # FRIENDLY ECO INSIGHT
-    # =============================
-    if eco_score >= 80:
-        st.success("🌟 Excellent choice — nature approves")
-    elif eco_score >= 65:
-        st.info("👍 Solid pick — better than average")
-    elif eco_score >= 50:
-        st.warning("⚠️ Moderate impact — greener alternatives exist")
-    else:
-        st.error("❗ Heavy footprint — consider switching")
+            score_col1, score_col2 = st.columns([2, 3])
 
-    # =============================
-    # NAVIGATION CTA
-    # =============================
-    st.markdown(
-        """
-        🌍 Curious how your choices add up?  
-        👉 Head to the **Impact Dashboard** to see your planet story grow.
-        """
-    )
+            with score_col1:
+                st.markdown(f"""
+                    <div style="
+                        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                        border-radius: 20px;
+                        padding: 30px;
+                        text-align: center;
+                        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+                    ">
+                        <h1 style="color: white; margin: 0; font-size: 4em;">{r['eco_score']}</h1>
+                        <p style="color: rgba(255,255,255,0.9); margin: 5px 0 0 0; font-size: 1.1em;">out of 100</p>
+                    </div>
+                """, unsafe_allow_html=True)
+
+            with score_col2:
+                if r['eco_score'] >= 80:
+                    badge_color, badge_text, emoji = "#10b981", "Excellent", "🌟"
+                elif r['eco_score'] >= 60:
+                    badge_color, badge_text, emoji = "#3b82f6", "Good", "👍"
+                elif r['eco_score'] >= 40:
+                    badge_color, badge_text, emoji = "#f59e0b", "Moderate", "⚠️"
+                else:
+                    badge_color, badge_text, emoji = "#ef4444", "Needs Improvement", "❗"
+
+                st.markdown(f"""
+                    <div style="padding: 20px 0;">
+                        <div style="
+                            background-color: {badge_color};
+                            color: white;
+                            padding: 15px 25px;
+                            border-radius: 12px;
+                            display: inline-block;
+                            font-size: 1.3em;
+                            font-weight: bold;
+                            margin-bottom: 15px;
+                            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+                        ">
+                            {emoji} {badge_text}
+                        </div>
+                        <p style="color: #6b7280;">
+                            This score reflects overall environmental impact.
+                        </p>
+                    </div>
+                """, unsafe_allow_html=True)
+
+            st.divider()
+
+            # ---------- METRICS ----------
+            st.markdown("### 📊 Environmental Impact Breakdown")
+
+            col1, col2, col3, col4 = st.columns(4)
+            col1.metric("💨 Carbon", f"{r['total_carbon_kg']} kg")
+            col2.metric("💧 Water", f"{r['total_water_L']} L")
+            col3.metric("⚡ Energy", f"{r['total_energy_MJ']} MJ")
+            col4.metric("🗑 Waste", f"{r['total_waste_score']}")
+
+            # =============================
+            # ✅ LOG PRODUCT (CRITICAL FIX)
+            # =============================
+            log_key = f"{product_input}_{r['eco_score']}"
+
+            if log_key not in st.session_state.logged_keys:
+                st.session_state.impact_history = pd.concat(
+                    [
+                        st.session_state.impact_history,
+                        pd.DataFrame([{
+                            "Product": product_input,
+                            "Category": r["category"],
+                            "Eco Score": r["eco_score"],
+                            "Carbon (kg)": r["total_carbon_kg"],
+                            "Water (L)": r["total_water_L"],
+                            "Energy (MJ)": r["total_energy_MJ"],
+                            "Waste Score": r["total_waste_score"]
+                        }])
+                    ],
+                    ignore_index=True
+                )
+
+                st.session_state.logged_keys.add(log_key)
+
+            st.markdown("<br>", unsafe_allow_html=True)
+
+            with st.expander("📊 View detailed data"):
+                st.dataframe(result, use_container_width=True)
+
+            category = r["category"].strip()
+            st.subheader("🌿 Greener Alternatives")
+
+            if category in GREENER_ALTERNATIVES:
+                for alt in GREENER_ALTERNATIVES[category]:
+                    st.markdown(f"**{alt['name']}**  \n*Why it’s greener:* {alt['reason']}")
+            else:
+                st.write("No greener alternatives available for this category.")
+
 
 
 
