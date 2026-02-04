@@ -418,200 +418,126 @@ if st.session_state.page == "Home":
 # GREEN SCORE PAGE
 # -------------------------
 elif st.session_state.page == "GreenScore":
+    import pandas as pd
+    import streamlit as st
+
     st.button("← Back to Home", on_click=go, args=("Home",))
-    st.title("🌿 GreenScore")
+    st.title("🌱 GreenScore")
+    st.caption("Every product tells a story. Let’s read its footprint 🌍")
 
-    # -----------------------------
-    # Step 7: USER INPUT + DISPLAY
-    # -----------------------------
-    product_input = st.text_input("🔍 Enter product name", placeholder="e.g., Organic Cotton T-Shirt")
-      
-    if product_input:
-        st.session_state.selected_product = product_input
-        result = summary_df[
-            summary_df['name'].str.lower() == product_input.lower()
-        ]
-    
-        if result.empty:
-            st.error("❌ Product not found in database.")
-        else:
-            r = result.iloc[0]
-    
-            st.divider()
-            
-            # ---------- ECO SCORE ----------
-            st.markdown("### 🌿 Eco Score")
-            
-            # Create a more visually appealing score display
-            score_col1, score_col2 = st.columns([2, 3])
-            
-            with score_col1:
-                # Large score display
-                st.markdown(f"""
-                    <div style="
-                        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-                        border-radius: 20px;
-                        padding: 30px;
-                        text-align: center;
-                        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-                    ">
-                        <h1 style="color: white; margin: 0; font-size: 4em;">{r['eco_score']}</h1>
-                        <p style="color: rgba(255,255,255,0.9); margin: 5px 0 0 0; font-size: 1.1em;">out of 100</p>
-                    </div>
-                """, unsafe_allow_html=True)
-            
-            with score_col2:
-                # Score interpretation
-                if r['eco_score'] >= 80:
-                    badge_color = "#10b981"
-                    badge_text = "Excellent"
-                    emoji = "🌟"
-                elif r['eco_score'] >= 60:
-                    badge_color = "#3b82f6"
-                    badge_text = "Good"
-                    emoji = "👍"
-                elif r['eco_score'] >= 40:
-                    badge_color = "#f59e0b"
-                    badge_text = "Moderate"
-                    emoji = "⚠️"
-                else:
-                    badge_color = "#ef4444"
-                    badge_text = "Needs Improvement"
-                    emoji = "❗"
-                
-                st.markdown(f"""
-                    <div style="padding: 20px 0;">
-                        <div style="
-                            background-color: {badge_color};
-                            color: white;
-                            padding: 15px 25px;
-                            border-radius: 12px;
-                            display: inline-block;
-                            font-size: 1.3em;
-                            font-weight: bold;
-                            margin-bottom: 15px;
-                            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-                        ">
-                            {emoji} {badge_text}
-                        </div>
-                        <p style="color: #6b7280; margin-top: 10px; line-height: 1.6;">
-                            This score reflects the overall environmental impact across carbon, water, energy, and waste metrics.
-                        </p>
-                    </div>
-                """, unsafe_allow_html=True)
-            
-            # Progress bar with custom styling
-            st.markdown(f"""
-                <div style="margin: 20px 0;">
-                    <div style="
-                        background-color: #e5e7eb;
-                        border-radius: 10px;
-                        height: 12px;
-                        overflow: hidden;
-                    ">
-                        <div style="
-                            background: linear-gradient(90deg, #10b981 0%, #3b82f6 50%, #f59e0b 100%);
-                            width: {r['eco_score']}%;
-                            height: 100%;
-                            border-radius: 10px;
-                            transition: width 0.5s ease;
-                        "></div>
-                    </div>
-                </div>
-            """, unsafe_allow_html=True)
-    
-            st.divider()
-    
-            # ---------- METRICS ----------
-            st.markdown("### 📊 Environmental Impact Breakdown")
-            
-            col1, col2, col3, col4 = st.columns(4)
-    
-            with col1:
-                st.markdown(f"""
-                    <div style="
-                        background-color: #fef3c7;
-                        border-left: 4px solid #f59e0b;
-                        border-radius: 8px;
-                        padding: 20px 15px;
-                        text-align: center;
-                    ">
-                        <div style="font-size: 2em; margin-bottom: 10px;">🌫</div>
-                        <div style="color: #78716c; font-size: 0.85em; margin-bottom: 5px;">Carbon Footprint</div>
-                        <div style="color: #292524; font-size: 1.5em; font-weight: bold;">{r['total_carbon_kg']}</div>
-                        <div style="color: #78716c; font-size: 0.75em;">kg CO₂e</div>
-                    </div>
-                """, unsafe_allow_html=True)
-    
-            with col2:
-                st.markdown(f"""
-                    <div style="
-                        background-color: #dbeafe;
-                        border-left: 4px solid #3b82f6;
-                        border-radius: 8px;
-                        padding: 20px 15px;
-                        text-align: center;
-                    ">
-                        <div style="font-size: 2em; margin-bottom: 10px;">💧</div>
-                        <div style="color: #475569; font-size: 0.85em; margin-bottom: 5px;">Water Usage</div>
-                        <div style="color: #1e293b; font-size: 1.5em; font-weight: bold;">{r['total_water_L']}</div>
-                        <div style="color: #475569; font-size: 0.75em;">Liters</div>
-                    </div>
-                """, unsafe_allow_html=True)
-    
-            with col3:
-                st.markdown(f"""
-                    <div style="
-                        background-color: #fef9c3;
-                        border-left: 4px solid #eab308;
-                        border-radius: 8px;
-                        padding: 20px 15px;
-                        text-align: center;
-                    ">
-                        <div style="font-size: 2em; margin-bottom: 10px;">⚡</div>
-                        <div style="color: #78716c; font-size: 0.85em; margin-bottom: 5px;">Energy Use</div>
-                        <div style="color: #292524; font-size: 1.5em; font-weight: bold;">{r['total_energy_MJ']}</div>
-                        <div style="color: #78716c; font-size: 0.75em;">MJ</div>
-                    </div>
-                """, unsafe_allow_html=True)
-    
-            with col4:
-                st.markdown(f"""
-                    <div style="
-                        background-color: #e0e7ff;
-                        border-left: 4px solid #6366f1;
-                        border-radius: 8px;
-                        padding: 20px 15px;
-                        text-align: center;
-                    ">
-                        <div style="font-size: 2em; margin-bottom: 10px;">🗑</div>
-                        <div style="color: #475569; font-size: 0.85em; margin-bottom: 5px;">Waste Impact</div>
-                        <div style="color: #1e293b; font-size: 1.5em; font-weight: bold;">{r['total_waste_score']}</div>
-                        <div style="color: #475569; font-size: 0.75em;">Score</div>
-                    </div>
-                """, unsafe_allow_html=True)
-    
-            st.markdown("<br>", unsafe_allow_html=True)
-    
-            # ---------- OPTIONAL DETAILS ----------
-            with st.expander("📊 View detailed data"):
-                st.dataframe(result, use_container_width=True)
+    # =============================
+    # INIT GLOBAL HISTORY (ONCE)
+    # =============================
+    if "impact_history" not in st.session_state:
+        st.session_state.impact_history = pd.DataFrame(columns=[
+            "Product", "Category", "Eco Score",
+            "Carbon (kg)", "Water (L)", "Energy (MJ)", "Waste Score"
+        ])
 
-            # ✅ FIX 1: category must be INSIDE else block
-            category = result.iloc[0]['category'].strip()
+    # =============================
+    # PRODUCT SELECTION
+    # =============================
+    product_name = st.selectbox(
+        "Select a product to analyse",
+        summary_df["name"].unique()
+    )
 
-            st.subheader("🌿 Greener Alternatives")
+    row = summary_df[summary_df["name"] == product_name].iloc[0]
 
-            if category in GREENER_ALTERNATIVES:
-                for alt in GREENER_ALTERNATIVES[category]:
-                    st.markdown(
-                        f"""
-                        **{alt['name']}**  
-                        *Why it’s greener:* {alt['reason']}
-                        """
-                    )
-            else:
-                st.write("No greener alternatives available for this category.")
+    st.divider()
+
+    # =============================
+    # ECO SCORE DISPLAY
+    # =============================
+    eco_score = row["eco_score"]
+
+    st.markdown(
+        f"""
+        <div style="
+        padding:1rem;
+        border-radius:0.75rem;
+        background:linear-gradient(135deg,#ecfdf5,#f0fdf4);
+        border:1px solid #bbf7d0;
+        text-align:center;
+        ">
+        <h2 style="margin:0;color:#065f46">Eco Score</h2>
+        <h1 style="margin:0;color:#16a34a">{eco_score:.1f} / 100</h1>
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
+
+    st.divider()
+
+    # =============================
+    # IMPACT BREAKDOWN
+    # =============================
+    c1, c2, c3, c4 = st.columns(4)
+
+    c1.metric("💨 Carbon", f"{row['total_carbon_kg']:.2f} kg")
+    c2.metric("💧 Water", f"{row['total_water_L']:.0f} L")
+    c3.metric("⚡ Energy", f"{row['total_energy_MJ']:.1f} MJ")
+    c4.metric("🗑️ Waste", f"{row['total_waste_score']:.1f}")
+
+    st.caption("Lower impact = happier planet 🌍")
+
+    st.divider()
+
+    # =============================
+    # LOG PRODUCT (IMMEDIATELY + ONCE)
+    # =============================
+    log_key = f"{product_name}_{eco_score}"
+
+    if "logged_keys" not in st.session_state:
+        st.session_state.logged_keys = set()
+
+    if log_key not in st.session_state.logged_keys:
+        new_row = pd.DataFrame([{
+            "Product": product_name,
+            "Category": row["category"],
+            "Eco Score": eco_score,
+            "Carbon (kg)": row["total_carbon_kg"],
+            "Water (L)": row["total_water_L"],
+            "Energy (MJ)": row["total_energy_MJ"],
+            "Waste Score": row["total_waste_score"]
+        }])
+
+        st.session_state.impact_history = pd.concat(
+            [st.session_state.impact_history, new_row],
+            ignore_index=True
+        )
+
+        st.session_state.logged_keys.add(log_key)
+
+        st.success("🌱 Added to your impact journey")
+    else:
+        st.info("Already counted — this choice is remembered 🌿")
+
+    st.divider()
+
+    # =============================
+    # FRIENDLY ECO INSIGHT
+    # =============================
+    if eco_score >= 80:
+        st.success("🌟 Excellent choice — nature approves")
+    elif eco_score >= 65:
+        st.info("👍 Solid pick — better than average")
+    elif eco_score >= 50:
+        st.warning("⚠️ Moderate impact — greener alternatives exist")
+    else:
+        st.error("❗ Heavy footprint — consider switching")
+
+    # =============================
+    # NAVIGATION CTA
+    # =============================
+    st.markdown(
+        """
+        🌍 Curious how your choices add up?  
+        👉 Head to the **Impact Dashboard** to see your planet story grow.
+        """
+    )
+
+
 
 
 # -------------------------
@@ -677,102 +603,52 @@ elif st.session_state.page == "Impact Dashboard":
     st.caption("A living story of how your choices shape the planet 🌱")
 
     # =============================
-    # REQUIRE PRODUCT FROM GREENSCORE
+    # REQUIRE HISTORY
     # =============================
-    if "selected_product" not in st.session_state:
-        st.info("Calculate a Green Score to start tracking your impact 🌍")
+    if "impact_history" not in st.session_state or st.session_state.impact_history.empty:
+        st.info("Analyse products to start building your impact story 🌱")
         st.stop()
 
-    product_name = st.session_state.selected_product
-
-    # =============================
-    # INIT HISTORY
-    # =============================
-    if "impact_history" not in st.session_state:
-        st.session_state.impact_history = pd.DataFrame(columns=[
-            "Product", "Category", "Eco Score",
-            "Carbon (kg)", "Water (L)", "Energy (MJ)", "Waste Score"
-        ])
-
-    # =============================
-    # AUTO-LOG PRODUCT (ONCE)
-    # =============================
-    row = summary_df[summary_df["name"] == product_name].iloc[0]
-
-    log_key = f"{product_name}_{row['eco_score']}"
-
-    if st.session_state.get("last_logged_key") != log_key:
-        st.session_state.impact_history = pd.concat([
-            st.session_state.impact_history,
-            pd.DataFrame([{
-                "Product": product_name,
-                "Category": row["category"],
-                "Eco Score": row["eco_score"],
-                "Carbon (kg)": row["total_carbon_kg"],
-                "Water (L)": row["total_water_L"],
-                "Energy (MJ)": row["total_energy_MJ"],
-                "Waste Score": row["total_waste_score"]
-            }])
-        ], ignore_index=True)
-
-        st.session_state.last_logged_key = log_key
-
-    # =============================
-    # SHOW CURRENT PRODUCT (AESTHETIC)
-    # =============================
-    st.markdown(
-        f"""
-        <div style="padding:0.75rem;border-radius:0.5rem;
-        background-color:#f0fdf4;border:1px solid #bbf7d0;margin-bottom:1rem">
-        📦 <strong>Currently analysing:</strong> {product_name}
-        </div>
-        """,
-        unsafe_allow_html=True
-    )
-
-    # =============================
-    # DASHBOARD CONTENT
-    # =============================
     history = st.session_state.impact_history.copy()
-
-    if history.empty:
-        st.info("No products logged yet 🌱")
-        st.stop()
 
     st.divider()
 
     # =============================
-    # BIG SUMMARY
+    # 🌱 BIG SUMMARY METRICS
     # =============================
     avg_score = history["Eco Score"].mean()
+    total_score = history["Eco Score"].sum()
 
-    c1, c2, c3 = st.columns(3)
+    c1, c2, c3, c4 = st.columns(4)
     c1.metric("Average Eco Score", f"{avg_score:.1f} / 100")
     c2.metric("Products Logged", len(history))
     c3.metric("High-Eco Choices", (history["Eco Score"] >= 80).sum())
+    c4.metric("Total Eco Score", int(total_score))
+
+    st.divider()
 
     # =============================
-    # 🌍 HUMAN IMPACT SUMMARY
+    # 🌍 HUMAN IMPACT TRANSLATION
     # =============================
-    st.markdown("## 🌍 What This Means for the Planet")
-
     avg_carbon = history["Carbon (kg)"].mean()
     avg_water = history["Water (L)"].mean()
     avg_energy = history["Energy (MJ)"].mean()
 
+    st.markdown("## 🌍 What This Means for the Planet")
+
     st.markdown(f"""
-🌱 **Based on your tracked products, on average you create:**
+🌱 **On average, your purchases cause:**
 
 - 💨 **{avg_carbon:.2f} kg CO₂**  
   *(≈ charging a phone {int(avg_carbon*120)} times 📱)*
 
-- 💧 **{avg_water:.1f} liters of water use**  
+- 💧 **{avg_water:.1f} L water use**  
   *(≈ {int(avg_water/50)} quick showers 🚿)*
 
-- ⚡ **{avg_energy:.1f} MJ of energy demand**  
-  *(≈ hours of household electricity 🔌)*
+- ⚡ **{avg_energy:.1f} MJ energy demand**  
+  *(≈ powering a home for hours 🔌)*
 
-✨ *Your everyday purchases quietly shape the planet — and awareness is the first win.*
+✨ *Small choices. Real consequences. Growing awareness.*
 """)
 
     st.divider()
@@ -781,7 +657,6 @@ elif st.session_state.page == "Impact Dashboard":
     # 📈 ECOSCORE TREND
     # =============================
     st.markdown("## 📈 Your EcoScore Journey")
-    st.caption("Each point represents a product you analysed")
 
     trend_fig = px.line(
         history.reset_index(),
@@ -792,27 +667,26 @@ elif st.session_state.page == "Impact Dashboard":
     )
     trend_fig.update_layout(
         xaxis_title="Order of products analysed",
-        yaxis_title="Eco Score (higher is better)"
+        yaxis_title="Eco Score"
     )
 
     st.plotly_chart(trend_fig, use_container_width=True)
 
     if len(history) >= 2:
         delta = history["Eco Score"].iloc[-1] - history["Eco Score"].iloc[0]
-
         if delta > 5:
-            st.success(f"📈 Your EcoScore improved by **{delta:.1f} points** — your choices are getting greener 🌿")
+            st.success("📈 Your choices are getting greener 🌿")
         elif delta < -5:
-            st.warning(f"📉 Your EcoScore dropped by **{abs(delta):.1f} points** — consider greener swaps 🔄")
+            st.warning("📉 Impact increasing — greener swaps help 🔄")
         else:
-            st.info("➖ Your EcoScore has stayed fairly stable — consistency is forming 🌱")
+            st.info("➖ Consistency forming 🌱")
 
     st.divider()
 
     # =============================
     # 📊 AVERAGE IMPACT BREAKDOWN
     # =============================
-    st.markdown("## 📊 What Affects You the Most")
+    st.markdown("## 📊 What Impacts You the Most")
 
     impact_avg = history[
         ["Carbon (kg)", "Water (L)", "Energy (MJ)", "Waste Score"]
@@ -820,7 +694,7 @@ elif st.session_state.page == "Impact Dashboard":
 
     impact_avg.columns = ["Impact Type", "Average Value"]
 
-    bar_fig = px.bar(
+    impact_fig = px.bar(
         impact_avg,
         x="Impact Type",
         y="Average Value",
@@ -828,7 +702,7 @@ elif st.session_state.page == "Impact Dashboard":
         color_discrete_sequence=px.colors.sequential.Greens
     )
 
-    st.plotly_chart(bar_fig, use_container_width=True)
+    st.plotly_chart(impact_fig, use_container_width=True)
 
     st.divider()
 
@@ -836,10 +710,10 @@ elif st.session_state.page == "Impact Dashboard":
     # 🔄 STACKED PRODUCT COMPARISON
     # =============================
     st.markdown("## 🔄 Compare Products by Impact")
-    st.caption("See *why* one product is greener — not just the score 🌿")
+    st.caption("See *why* a product scores better — not just the number 🌿")
 
     compare_products = st.multiselect(
-        "Select products to compare",
+        "Select products",
         history["Product"].unique(),
         default=list(history["Product"].unique()[:2])
     )
@@ -864,23 +738,23 @@ elif st.session_state.page == "Impact Dashboard":
 
         st.plotly_chart(stacked_fig, use_container_width=True)
     else:
-        st.info("Select at least two products to compare 🌱")
+        st.info("Select at least two products 🌱")
 
     st.divider()
 
     # =============================
-    # 🏆 BADGES
+    # 🏆 ECO STATUS
     # =============================
     st.markdown("## 🏆 Your Sustainability Status")
 
     if avg_score >= 80:
-        st.success("🌟 Eco Hero — nature is cheering you on")
+        st.success("🌟 Eco Hero — nature approves")
     elif avg_score >= 65:
-        st.info("👍 Conscious Consumer — strong everyday choices")
+        st.info("👍 Conscious Consumer")
     elif avg_score >= 50:
-        st.warning("⚠️ Improving — small swaps go a long way")
+        st.warning("⚠️ Improving — momentum building")
     else:
-        st.error("❗ High Impact — time for greener upgrades")
+        st.error("❗ High Impact — greener swaps needed")
 
     st.divider()
 
@@ -892,8 +766,8 @@ elif st.session_state.page == "Impact Dashboard":
 
     if st.button("🗑️ Clear Impact History"):
         st.session_state.impact_history = history.iloc[0:0]
-        st.session_state.last_logged_key = None
-        st.warning("Impact history cleared.")
+        st.success("Impact history cleared 🌱")
+
 
 
 
