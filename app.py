@@ -659,188 +659,174 @@ elif st.session_state.page == "Chatbot":
 # -------------------------
 elif st.session_state.page == "Impact Dashboard":
     import pandas as pd
-    import plotly.graph_objects as go
-    import plotly.express as px
+    import matplotlib.pyplot as plt
+    import numpy as np
 
     st.button("← Back to Home", on_click=go, args=("Home",))
-    st.title("🌍 Your Sustainability Impact")
-    st.caption("A personal snapshot of how your daily choices affect the planet")
+    st.title("🌍 Your Impact Dashboard")
+
+    st.write(
+        "This page tracks your *actual environmental footprint* over time. "
+        "No guilt. Just vibes, data, and greener choices 🌱"
+    )
 
     # =============================
-    # INIT HISTORY
+    # INIT IMPACT HISTORY
     # =============================
     if "impact_history" not in st.session_state:
         st.session_state.impact_history = pd.DataFrame(columns=[
-            "Product", "Category", "Eco Score",
-            "Carbon (kg)", "Water (L)", "Energy (MJ)", "Waste Score"
+            "Product",
+            "Category",
+            "Eco Score",
+            "Carbon (kg)",
+            "Water (L)",
+            "Energy (MJ)",
+            "Waste Score"
         ])
 
     # =============================
     # ADD PRODUCT
     # =============================
-    st.markdown("### ➕ Log a Product")
+    st.subheader("➕ Log a Product You Used")
 
-    col1, col2 = st.columns([3, 1])
-    with col1:
-        product_name = st.selectbox(
-            "Choose product",
-            summary_df["name"].unique(),
-            label_visibility="collapsed"
+    product_name = st.selectbox(
+        "Pick something you bought or used 👇",
+        summary_df["name"].unique()
+    )
+
+    product_row = summary_df[summary_df["name"] == product_name].iloc[0]
+
+    if st.button("🌿 Add to My Impact History"):
+        new_row = {
+            "Product": product_name,
+            "Category": product_row["category"],
+            "Eco Score": product_row["eco_score"],
+            "Carbon (kg)": product_row["total_carbon_kg"],
+            "Water (L)": product_row["total_water_L"],
+            "Energy (MJ)": product_row["total_energy_MJ"],
+            "Waste Score": product_row["total_waste_score"]
+        }
+
+        st.session_state.impact_history = pd.concat(
+            [st.session_state.impact_history, pd.DataFrame([new_row])],
+            ignore_index=True
         )
-    with col2:
-        add_btn = st.button("Add")
 
-    if add_btn:
-        row = summary_df[summary_df["name"] == product_name].iloc[0]
-        st.session_state.impact_history = pd.concat([
-            st.session_state.impact_history,
-            pd.DataFrame([{
-                "Product": product_name,
-                "Category": row["category"],
-                "Eco Score": row["eco_score"],
-                "Carbon (kg)": row["total_carbon_kg"],
-                "Water (L)": row["total_water_L"],
-                "Energy (MJ)": row["total_energy_MJ"],
-                "Waste Score": row["total_waste_score"]
-            }])
-        ], ignore_index=True)
-
-        st.success("Logged 🌱")
+        st.success("🌱 Logged! The planet noticed. Probably.")
 
     # =============================
-    # DASHBOARD CONTENT
+    # IF HISTORY EXISTS
     # =============================
     if not st.session_state.impact_history.empty:
-        history = st.session_state.impact_history.copy()
+        history = st.session_state.impact_history
 
         st.divider()
 
         # =============================
-        # BIG SUMMARY
+        # OVERALL IMPACT SUMMARY
         # =============================
         avg_score = history["Eco Score"].mean()
 
-        c1, c2, c3 = st.columns(3)
-        c1.metric("Average Impact Score", f"{avg_score:.1f} / 100")
-        c2.metric("Products Logged", len(history))
-        c3.metric("High-Eco Choices", (history["Eco Score"] >= 80).sum())
+        st.subheader("🌿 Your Overall Eco Vibe")
 
-        st.divider()
-
-        # =============================
-        # 🌿 RADAR CHART (CORE FEATURE)
-        # =============================
-        st.markdown("## 🌿 Your Impact Profile")
-        st.caption("Lower area = lower environmental pressure")
-
-        # Normalize values for radar (0 = best, 1 = worst)
-        radar_vals = {
-            "Carbon": min(history["Carbon (kg)"].mean() / CARBON_CAP, 1),
-            "Water": min(history["Water (L)"].mean() / WATER_CAP, 1),
-            "Energy": min(history["Energy (MJ)"].mean() / ENERGY_CAP, 1),
-            "Waste": min(history["Waste Score"].mean() / WASTE_CAP, 1)
-        }
-
-        radar_fig = go.Figure()
-        radar_fig.add_trace(go.Scatterpolar(
-            r=list(radar_vals.values()),
-            theta=list(radar_vals.keys()),
-            fill="toself",
-            name="Your Impact",
-            line_color="#10b981"
-        ))
-
-        radar_fig.update_layout(
-            polar=dict(
-                radialaxis=dict(visible=True, range=[0, 1])
-            ),
-            showlegend=False,
-            height=400
+        st.metric(
+            "Average GreenScore",
+            f"{avg_score:.1f} / 100",
+            help="Higher = kinder to the planet 🌍"
         )
-
-        st.plotly_chart(radar_fig, use_container_width=True)
-
-        st.divider()
-
-        # =============================
-        # 📈 ECOSCORE TREND
-        # =============================
-        st.markdown("## 📈 Your EcoScore Over Time")
-        st.caption("Each point represents one product you logged")
-
-        trend_fig = px.line(
-            history.reset_index(),
-            x=history.reset_index().index,
-            y="Eco Score",
-            markers=True,
-            color_discrete_sequence=["#3b82f6"]
-        )
-        trend_fig.update_layout(
-            xaxis_title="Product Logged Order",
-            yaxis_title="Eco Score"
-        )
-
-        st.plotly_chart(trend_fig, use_container_width=True)
-
-        st.divider()
-
-        # =============================
-        # 📊 IMPACT BAR (CLEAR + SIMPLE)
-        # =============================
-        st.markdown("## 📊 What Affects You Most")
-
-        impact_avg = history[[
-            "Carbon (kg)", "Water (L)", "Energy (MJ)", "Waste Score"
-        ]].mean().reset_index()
-
-        impact_avg.columns = ["Impact Type", "Average Value"]
-
-        bar_fig = px.bar(
-            impact_avg,
-            x="Impact Type",
-            y="Average Value",
-            color="Impact Type",
-            color_discrete_sequence=px.colors.sequential.Greens
-        )
-
-        st.plotly_chart(bar_fig, use_container_width=True)
-
-        st.divider()
-
-        # =============================
-        # 🏆 BADGES
-        # =============================
-        st.markdown("## 🏆 Your Sustainability Status")
 
         if avg_score >= 80:
-            st.success("🌟 Eco Hero — exceptional low-impact lifestyle")
+            st.success("🌟 Nature approves. Trees are nodding.")
         elif avg_score >= 65:
-            st.info("👍 Conscious Consumer — strong everyday choices")
+            st.info("👍 Pretty solid. Earth says: nice.")
         elif avg_score >= 50:
-            st.warning("⚠️ Improving — small swaps can help a lot")
+            st.warning("⚠️ Mixed signals. Room to grow 🌱")
         else:
-            st.error("❗ High Impact — consider greener alternatives")
+            st.error("❗ Earth has entered the chat.")
 
+        # =============================
+        # STACKED IMPACT BAR CHART
+        # =============================
+        st.subheader("📊 What’s Actually Causing Your Impact?")
+
+        st.caption(
+            "Each bar is a product. The taller the bar, the louder the planet sighs."
+        )
+
+        impact_cols = ["Carbon (kg)", "Water (L)", "Energy (MJ)", "Waste Score"]
+
+        plot_df = history[["Product"] + impact_cols].set_index("Product")
+
+        fig, ax = plt.subplots(figsize=(10, 5))
+
+        bottom = np.zeros(len(plot_df))
+
+        colors = ["#94a3b8", "#60a5fa", "#facc15", "#a78bfa"]
+        labels = ["Carbon 🌫", "Water 💧", "Energy ⚡", "Waste 🗑"]
+
+        for col, color, label in zip(impact_cols, colors, labels):
+            ax.bar(
+                plot_df.index,
+                plot_df[col],
+                bottom=bottom,
+                label=label,
+                color=color
+            )
+            bottom += plot_df[col].values
+
+        ax.set_ylabel("Relative Impact (not to scale)")
+        ax.set_title("Stacked Environmental Impact by Product")
+        ax.legend()
+        ax.set_xticklabels(plot_df.index, rotation=30, ha="right")
+
+        st.pyplot(fig)
+
+        st.info(
+            "💡 Tip: If one color dominates a bar, *that* is the impact you should reduce first."
+        )
+
+        # =============================
+        # ECOSCORE TREND
+        # =============================
+        st.subheader("📈 Your GreenScore Over Time")
+
+        st.line_chart(history["Eco Score"])
+
+        st.caption(
+            "Upward trend = redemption arc 🌱"
+        )
+
+        # =============================
+        # BADGES
+        # =============================
+        st.subheader("🏆 Eco Badges (Totally Serious Business)")
+
+        if avg_score >= 80:
+            st.success("🌟 Eco Hero — The planet would trust you with a forest.")
         if len(history) >= 5:
-            st.success("📦 Habit Builder — consistent tracking")
-
+            st.success("📦 Habit Builder — Consistency is sustainable.")
         if (history["Eco Score"] >= 80).sum() >= 3:
-            st.success("🌿 Green Champion — multiple excellent picks")
-
-        st.divider()
+            st.success("♻ Green Champion — Multiple good choices. Respect.")
 
         # =============================
-        # 📜 HISTORY
+        # HISTORY TABLE
         # =============================
-        st.markdown("## 📜 Your Impact Log")
-        st.dataframe(history[::-1], use_container_width=True)
+        st.subheader("📜 Your Impact Log")
 
-        if st.button("🗑️ Clear Impact History"):
+        st.dataframe(history, use_container_width=True)
+
+        # =============================
+        # CLEAR HISTORY
+        # =============================
+        if st.button("🗑️ Reset My Impact (Forgive & Forget)"):
             st.session_state.impact_history = history.iloc[0:0]
-            st.warning("Impact history cleared.")
+            st.warning("History cleared. A fresh start 🌱")
 
     else:
-        st.info("Start logging products to unlock your impact dashboard 🌍")
+        st.info(
+            "No impact data yet. Add a product and let the dashboard bloom 🌼"
+        )
+
 
 
 # -------------------------
