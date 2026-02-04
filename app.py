@@ -659,7 +659,6 @@ elif st.session_state.page == "Chatbot":
 # -------------------------
 elif st.session_state.page == "Impact Dashboard":
     import pandas as pd
-    import matplotlib.pyplot as plt
 
     st.button("← Back to Home", on_click=go, args=("Home",))
     st.title("🌍 Your Impact Dashboard")
@@ -711,13 +710,13 @@ elif st.session_state.page == "Impact Dashboard":
             ignore_index=True
         )
 
-        st.success("Product added to your impact history!")
+        st.success("✅ Product added to your impact history!")
 
     # =============================
     # If history exists
     # =============================
     if not st.session_state.impact_history.empty:
-        history = st.session_state.impact_history
+        history = st.session_state.impact_history.copy()
 
         st.divider()
 
@@ -727,10 +726,7 @@ elif st.session_state.page == "Impact Dashboard":
         avg_score = history["Eco Score"].mean()
 
         st.subheader("🌱 Your Overall Impact")
-        st.metric(
-            "Average GreenScore",
-            f"{avg_score:.1f} / 100"
-        )
+        st.metric("Average GreenScore", f"{avg_score:.1f} / 100")
 
         # =============================
         # BADGES
@@ -753,7 +749,7 @@ elif st.session_state.page == "Impact Dashboard":
             st.success("🌿 Green Champion – 3+ high-eco products chosen")
 
         # =============================
-        # EcoScore Trend
+        # EcoScore Trend (NO matplotlib)
         # =============================
         st.subheader("📈 GreenScore Over Time")
         st.line_chart(history["Eco Score"])
@@ -770,38 +766,29 @@ elif st.session_state.page == "Impact Dashboard":
             "Waste Score"
         ]].mean()
 
-        fig, ax = plt.subplots()
-        impact_avg.plot(kind="bar", ax=ax)
-        ax.set_ylabel("Impact")
-        ax.set_title("Average Impact per Product")
-        st.pyplot(fig)
+        st.bar_chart(impact_avg)
 
         # =============================
-        # PRODUCT COMPARISON
+        # PRODUCT COMPARISON (SAFE)
         # =============================
         st.subheader("🔄 Compare Products")
 
         compare_products = st.multiselect(
             "Select products to compare",
             history["Product"].unique(),
-            default=history["Product"].unique()[:2]
+            default=list(history["Product"].unique())[:2]
         )
 
         if len(compare_products) >= 2:
             compare_df = history[history["Product"].isin(compare_products)]
 
-            fig, ax = plt.subplots()
-            for product in compare_products:
-                ax.plot(
-                    compare_df[compare_df["Product"] == product]["Eco Score"].values,
-                    label=product,
-                    marker="o"
-                )
+            pivot_df = compare_df.pivot_table(
+                index=compare_df.groupby("Product").cumcount(),
+                columns="Product",
+                values="Eco Score"
+            )
 
-            ax.set_ylabel("Eco Score")
-            ax.set_title("Eco Score Comparison")
-            ax.legend()
-            st.pyplot(fig)
+            st.line_chart(pivot_df)
 
         # =============================
         # HISTORY TABLE
@@ -818,6 +805,7 @@ elif st.session_state.page == "Impact Dashboard":
 
     else:
         st.info("No products added yet. Start tracking to see your impact!")
+
 
 # -------------------------
 # ABOUT PAGE
