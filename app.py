@@ -826,7 +826,7 @@ elif st.session_state.page == "Impact Dashboard":
             else:
                 st.info("➖ Your EcoScore has stayed fairly stable — consistency is forming 🌱")
 
-        st.divider()
+    st.divider()
 
    
 
