@@ -839,7 +839,24 @@ elif st.session_state.page == "Impact Dashboard":
     elif avg_score >= 50:
         st.warning("⚠️ Improving — small swaps go a long way")
     else:
-        st.error("❗ High Impact — time for greener upgrades
+        st.error("❗ High Impact — time for greener upgrades")
+    if len(history) >= 5:
+        st.success("📦 Habit Builder — consistent tracking")
+
+    if (history["Eco Score"] >= 80).sum() >= 3:
+        st.success("🌿 Green Champion — multiple excellent picks")
+
+    st.divider()
+
+    # =============================
+    # 📜 HISTORY TABLE
+    # =============================
+    st.markdown("## 📜 Your Impact Log")
+    st.dataframe(history[::-1], use_container_width=True)
+
+    if st.button("🗑️ Clear Impact History"):
+        st.session_state.impact_history = history.iloc[0:0]
+        st.warning("Impact history cleared.")
 
 
 
