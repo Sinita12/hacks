@@ -1,10 +1,11 @@
+
+
 import streamlit as st
 import pandas as pd
 import numpy as np
+import streamlit.components.v1 as components
 import requests
-
 st.set_page_config(page_title="EcoLens", page_icon="🌱", layout="wide")
-
 st.markdown("""
 <style>
 .block-container { padding-top: 1rem !important; }
@@ -178,6 +179,20 @@ products_df['eco_score'] = (
 
 products_df['eco_score'] = products_df['eco_score'].round(1)
 
+# =============================
+# FINAL SUMMARY TABLE (REQUIRED FOR GREEN SCORE PAGE)
+# =============================
+summary_df = products_df[[
+    'name',
+    'category',
+    'total_carbon_kg',
+    'total_water_L',
+    'total_energy_MJ',
+    'total_waste_score',
+    'eco_score'
+]].copy()
+
+
 # -------------------------
 # Navigation state
 # -------------------------
@@ -249,13 +264,155 @@ if st.session_state.page == "Home":
     
 
     st.header("✨ Key Features")
-    f1, f2 = st.columns(2)
-    with f1:
-        st.subheader("🌿 GreenScore")
-        st.write("- Barcode scan\n- Score + explanation\n- Better alternatives")
-    with f2:
-        st.subheader("🤖 AI Chatbot")
-        st.write("- Ingredient explanations\n- Claim checks\n- Eco tips")
+
+    components.html("""
+<div style="
+    background:#3f5a4d;
+    border-radius:18px;
+    padding:44px 38px;
+    margin-top:18px;
+    font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial;
+">
+  <div style="display:flex; gap:34px; align-items:center;">
+
+    <div style="flex:1.2;">
+      <h2 style="margin:0 0 14px 0; font-size:38px; color:white;">
+        🌿 GreenScore Tracker
+      </h2>
+
+      <p style="margin:0 0 14px 0; font-size:18px; line-height:1.7; color:rgba(255,255,255,0.92);">
+        Scan personal-care products and get a transparent sustainability score with clear reasons.
+      </p>
+
+      <ul style="margin:0; padding-left:20px; font-size:18px; line-height:1.7; color:rgba(255,255,255,0.92);">
+        <li>Barcode scan / product lookup</li>
+        <li>Score breakdown (ingredients, packaging, claims)</li>
+        <li>Greenwashing flags + simple explanations</li>
+        <li>Better alternatives for your purpose</li>
+      </ul>
+    </div>
+
+    <div style="flex:1; display:flex; justify-content:flex-end;">
+      <div style="
+          width:520px;
+          height:320px;
+          border-radius:16px;
+          overflow:hidden;
+          box-shadow: 0 10px 30px rgba(0,0,0,0.25);
+          background: rgba(255,255,255,0.06);
+      ">
+        <img src="https://www.iberdrola.com/documents/20125/40513/huella-de-carbono-746x419.jpg/f61f98a2-7c51-27f9-31d2-41b1dafe6bf7?t=1738248418273"
+             style="width:100%; height:100%; object-fit:cover;">
+      </div>
+    </div>
+
+  </div>
+</div>
+""", height=420)
+
+
+    
+    #-------------------------
+    # AI Chatbot
+    #-------------------------
+
+    components.html("""
+    <div style="
+        background:#15597e;   /* blueish */
+        border-radius:18px;
+        padding:44px 38px;
+        margin-top:22px;
+        font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial;
+    ">
+      <div style="display:flex; gap:34px; align-items:center;">
+    
+        <!-- LEFT IMAGE -->
+        <div style="flex:1; display:flex; justify-content:flex-start;">
+          <div style="
+              width:520px;
+              height:320px;
+              border-radius:16px;
+              overflow:hidden;
+              box-shadow: 0 10px 30px rgba(0,0,0,0.30);
+              background: rgba(255,255,255,0.06);
+          ">
+            <img src="https://beetroot.co/wp-content/uploads/sites/2/2024/12/Cover_AI-chatbots-in-GreenTech.png"
+                 style="width:100%; height:100%; object-fit:cover;">
+          </div>
+        </div>
+    
+        <!-- RIGHT TEXT -->
+        <div style="flex:1.2;">
+          <h2 style="margin:0 0 14px 0; font-size:38px; color:white;">
+            🤖 AI Chatbot
+          </h2>
+    
+          <p style="margin:0 0 14px 0; font-size:18px; line-height:1.7; color:rgba(255,255,255,0.92);">
+            Ask questions in plain English and get smart, personalized sustainability advice instantly.
+          </p>
+    
+          <ul style="margin:0; padding-left:20px; font-size:18px; line-height:1.7; color:rgba(255,255,255,0.92);">
+            <li>Ask about ingredients and claims</li>
+            <li>Detect greenwashing language</li>
+            <li>Get product recommendations</li>
+            <li>Tips for safer / sustainable swaps</li>
+          </ul>
+        </div>
+    
+      </div>
+    </div>
+    """, height=420)
+
+    #---------------------
+    # Impact Score
+    #---------------------
+  
+    components.html("""
+    <div style="
+        background:#1c3b2b;   /* forest green */
+        border-radius:18px;
+        padding:44px 38px;
+        margin-top:22px;
+        font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial;
+    ">
+      <div style="display:flex; gap:34px; align-items:center;">
+    
+        <!-- LEFT TEXT -->
+        <div style="flex:1.2;">
+          <h2 style="margin:0 0 14px 0; font-size:38px; color:white;">
+            🌲 Impact Score
+          </h2>
+    
+          <p style="margin:0 0 14px 0; font-size:18px; line-height:1.7; color:rgba(255,255,255,0.92);">
+            See the real environmental impact of every purchase in clear, easy-to-understand metrics.
+          </p>
+    
+          <ul style="margin:0; padding-left:20px; font-size:18px; line-height:1.7; color:rgba(255,255,255,0.92);">
+            <li>Track carbon footprint savings</li>
+            <li>Water & plastic reduction estimates</li>
+            <li>Compare products side-by-side</li>
+            <li>Visualize your eco progress over time</li>
+          </ul>
+        </div>
+    
+        <!-- RIGHT IMAGE -->
+        <div style="flex:1; display:flex; justify-content:flex-end;">
+          <div style="
+              width:520px;
+              height:320px;
+              border-radius:16px;
+              overflow:hidden;
+              box-shadow: 0 10px 30px rgba(0,0,0,0.30);
+              background: rgba(255,255,255,0.06);
+          ">
+            <img src="https://greenscoreapp.com/wp-content/uploads/2024/09/Empowering-Sustainability-Through-Innovation-image2-Green-Score.webp"
+                 style="width:100%; height:100%; object-fit:cover;">
+          </div>
+        </div>
+    
+      </div>
+    </div>
+    """, height=420)
 
 # -------------------------
 # GREEN SCORE PAGE
@@ -267,21 +424,177 @@ elif st.session_state.page == "GreenScore":
     # -----------------------------
     # Step 7: USER INPUT + DISPLAY
     # -----------------------------
-    product_input = st.text_input("🔍 Enter product name")
-
+    product_input = st.text_input("🔍 Enter product name", placeholder="e.g., Organic Cotton T-Shirt")
+      
     if product_input:
         result = summary_df[
             summary_df['name'].str.lower() == product_input.lower()
         ]
-
+    
         if result.empty:
-            st.error("Product not found in database.")
+            st.error("❌ Product not found in database.")
         else:
-            st.subheader("🌱 Environmental Impact Results")
-            st.dataframe(result, use_container_width=True)
-
-            eco = result.iloc[0]['eco_score']
-            st.metric("Eco Score (0–100)", eco)
+            r = result.iloc[0]
+    
+            st.divider()
+            
+            # ---------- ECO SCORE ----------
+            st.markdown("### 🌿 Eco Score")
+            
+            # Create a more visually appealing score display
+            score_col1, score_col2 = st.columns([2, 3])
+            
+            with score_col1:
+                # Large score display
+                st.markdown(f"""
+                    <div style="
+                        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                        border-radius: 20px;
+                        padding: 30px;
+                        text-align: center;
+                        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+                    ">
+                        <h1 style="color: white; margin: 0; font-size: 4em;">{r['eco_score']}</h1>
+                        <p style="color: rgba(255,255,255,0.9); margin: 5px 0 0 0; font-size: 1.1em;">out of 100</p>
+                    </div>
+                """, unsafe_allow_html=True)
+            
+            with score_col2:
+                # Score interpretation
+                if r['eco_score'] >= 80:
+                    badge_color = "#10b981"
+                    badge_text = "Excellent"
+                    emoji = "🌟"
+                elif r['eco_score'] >= 60:
+                    badge_color = "#3b82f6"
+                    badge_text = "Good"
+                    emoji = "👍"
+                elif r['eco_score'] >= 40:
+                    badge_color = "#f59e0b"
+                    badge_text = "Moderate"
+                    emoji = "⚠️"
+                else:
+                    badge_color = "#ef4444"
+                    badge_text = "Needs Improvement"
+                    emoji = "❗"
+                
+                st.markdown(f"""
+                    <div style="padding: 20px 0;">
+                        <div style="
+                            background-color: {badge_color};
+                            color: white;
+                            padding: 15px 25px;
+                            border-radius: 12px;
+                            display: inline-block;
+                            font-size: 1.3em;
+                            font-weight: bold;
+                            margin-bottom: 15px;
+                            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+                        ">
+                            {emoji} {badge_text}
+                        </div>
+                        <p style="color: #6b7280; margin-top: 10px; line-height: 1.6;">
+                            This score reflects the overall environmental impact across carbon, water, energy, and waste metrics.
+                        </p>
+                    </div>
+                """, unsafe_allow_html=True)
+            
+            # Progress bar with custom styling
+            st.markdown(f"""
+                <div style="margin: 20px 0;">
+                    <div style="
+                        background-color: #e5e7eb;
+                        border-radius: 10px;
+                        height: 12px;
+                        overflow: hidden;
+                    ">
+                        <div style="
+                            background: linear-gradient(90deg, #10b981 0%, #3b82f6 50%, #f59e0b 100%);
+                            width: {r['eco_score']}%;
+                            height: 100%;
+                            border-radius: 10px;
+                            transition: width 0.5s ease;
+                        "></div>
+                    </div>
+                </div>
+            """, unsafe_allow_html=True)
+    
+            st.divider()
+    
+            # ---------- METRICS ----------
+            st.markdown("### 📊 Environmental Impact Breakdown")
+            
+            col1, col2, col3, col4 = st.columns(4)
+    
+            with col1:
+                st.markdown(f"""
+                    <div style="
+                        background-color: #fef3c7;
+                        border-left: 4px solid #f59e0b;
+                        border-radius: 8px;
+                        padding: 20px 15px;
+                        text-align: center;
+                    ">
+                        <div style="font-size: 2em; margin-bottom: 10px;">🌫</div>
+                        <div style="color: #78716c; font-size: 0.85em; margin-bottom: 5px;">Carbon Footprint</div>
+                        <div style="color: #292524; font-size: 1.5em; font-weight: bold;">{r['total_carbon_kg']}</div>
+                        <div style="color: #78716c; font-size: 0.75em;">kg CO₂e</div>
+                    </div>
+                """, unsafe_allow_html=True)
+    
+            with col2:
+                st.markdown(f"""
+                    <div style="
+                        background-color: #dbeafe;
+                        border-left: 4px solid #3b82f6;
+                        border-radius: 8px;
+                        padding: 20px 15px;
+                        text-align: center;
+                    ">
+                        <div style="font-size: 2em; margin-bottom: 10px;">💧</div>
+                        <div style="color: #475569; font-size: 0.85em; margin-bottom: 5px;">Water Usage</div>
+                        <div style="color: #1e293b; font-size: 1.5em; font-weight: bold;">{r['total_water_L']}</div>
+                        <div style="color: #475569; font-size: 0.75em;">Liters</div>
+                    </div>
+                """, unsafe_allow_html=True)
+    
+            with col3:
+                st.markdown(f"""
+                    <div style="
+                        background-color: #fef9c3;
+                        border-left: 4px solid #eab308;
+                        border-radius: 8px;
+                        padding: 20px 15px;
+                        text-align: center;
+                    ">
+                        <div style="font-size: 2em; margin-bottom: 10px;">⚡</div>
+                        <div style="color: #78716c; font-size: 0.85em; margin-bottom: 5px;">Energy Use</div>
+                        <div style="color: #292524; font-size: 1.5em; font-weight: bold;">{r['total_energy_MJ']}</div>
+                        <div style="color: #78716c; font-size: 0.75em;">MJ</div>
+                    </div>
+                """, unsafe_allow_html=True)
+    
+            with col4:
+                st.markdown(f"""
+                    <div style="
+                        background-color: #e0e7ff;
+                        border-left: 4px solid #6366f1;
+                        border-radius: 8px;
+                        padding: 20px 15px;
+                        text-align: center;
+                    ">
+                        <div style="font-size: 2em; margin-bottom: 10px;">🗑</div>
+                        <div style="color: #475569; font-size: 0.85em; margin-bottom: 5px;">Waste Impact</div>
+                        <div style="color: #1e293b; font-size: 1.5em; font-weight: bold;">{r['total_waste_score']}</div>
+                        <div style="color: #475569; font-size: 0.75em;">Score</div>
+                    </div>
+                """, unsafe_allow_html=True)
+    
+            st.markdown("<br>", unsafe_allow_html=True)
+    
+            # ---------- OPTIONAL DETAILS ----------
+            with st.expander("📊 View detailed data"):
+                st.dataframe(result, use_container_width=True)
 
             # ✅ FIX 1: category must be INSIDE else block
             category = result.iloc[0]['category'].strip()
@@ -304,25 +617,18 @@ elif st.session_state.page == "GreenScore":
 # CHATBOT PAGE
 # -------------------------
 
-# -------------------------
 elif st.session_state.page == "Chatbot":
-
+  
 
     st.button("← Back to Home", on_click=go, args=("Home",))
     st.title("🤖 AI Chatbot")
-
     st.write("Ask a question about sustainability, ingredients, and alternatives.")
 
-    # --- OpenRouter setup ---
-    API_URL = "https://openrouter.ai/api/v1/chat/completions"
+    API_URL = "https://api-inference.huggingface.co/models/mistralai/Mistral-7B-Instruct-v0.2"
     HEADERS = {
-        "Authorization": f"Bearer {st.secrets['OPENROUTER_API_KEY']}",
-        "Content-Type": "application/json",
-        "HTTP-Referer": "https://yshjqxefcadzvekjp5lbdp.streamlit.app/",
-        "X-Title": "Sustainability Chatbot"
+        "Authorization": f"Bearer {st.secrets['HF_API_KEY']}"
     }
 
-    # Store chat history
     if "chat_history" not in st.session_state:
         st.session_state.chat_history = []
 
@@ -330,39 +636,25 @@ elif st.session_state.page == "Chatbot":
 
     if st.button("Ask") and user_q.strip():
         with st.spinner("Thinking..."):
-            payload = {
-                "model": "mistralai/mistral-7b-instruct",
-                "messages": [
-                    {
-                        "role": "system",
-                        "content": "You are a helpful assistant focused on sustainability and eco-friendly choices."
-                    },
-                    {
-                        "role": "user",
-                        "content": user_q
-                    }
-                ],
-                "temperature": 0.7,
-                "max_tokens": 300
-            }
-
-            response = requests.post(API_URL, headers=HEADERS, json=payload)
+            response = requests.post(
+                API_URL,
+                headers=HEADERS,
+                json={"inputs": f"Answer clearly:\n{user_q}"}
+            )
 
             if response.status_code == 200:
-                ai_reply = response.json()["choices"][0]["message"]["content"]
+                ai_reply = response.json()[0]["generated_text"]
             else:
-                ai_reply = f"⚠️ Error {response.status_code}: AI service unavailable."
+                ai_reply = "⚠️ AI service unavailable. Try again."
 
         st.session_state.chat_history.append(("You", user_q))
         st.session_state.chat_history.append(("AI", ai_reply))
 
-    # Display conversation
     for speaker, msg in st.session_state.chat_history:
-        if speaker == "You":
-            st.markdown(f"**🧑 You:** {msg}")
-        else:
-            st.markdown(f"**🤖 AI:** {msg}")
+        st.markdown(f"**{speaker}:** {msg}")
 
+
+# -------------------------
 # TOTAL IMPACT PAGE
 # -------------------------
 elif st.session_state.page == "Impact Dashboard":
