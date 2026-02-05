@@ -694,44 +694,73 @@ elif st.session_state.page == "GreenScore":
 
 elif st.session_state.page == "Chatbot":
 
-    from openai import OpenAI
     import streamlit as st
+    from openai import OpenAI
 
-    st.title("ChatGPT-like clone")
-
+    # -----------------------------
+    # INIT OPENAI CLIENT
+    # -----------------------------
     client = OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
 
-    if "openai_model" not in st.session_state:
-        st.session_state["openai_model"] = "gpt-3.5-turbo"
+    # -----------------------------
+    # PAGE SETUP
+    # -----------------------------
+    st.title("🤖 Eco Assistant")
+    st.caption("Ask me about sustainability, eco scores, or greener choices 🌱")
 
+    # -----------------------------
+    # CHAT MEMORY
+    # -----------------------------
     if "messages" not in st.session_state:
-        st.session_state.messages = []
+        st.session_state.messages = [
+            {
+                "role": "system",
+                "content": (
+                    "You are a helpful sustainability assistant. "
+                    "Give clear, practical, beginner-friendly answers. "
+                    "Be concise and encouraging."
+                )
+            }
+        ]
 
-    for message in st.session_state.messages:
-        with st.chat_message(message["role"]):
-            st.markdown(message["content"])
+    # -----------------------------
+    # DISPLAY CHAT
+    # -----------------------------
+    for msg in st.session_state.messages[1:]:
+        with st.chat_message(msg["role"]):
+            st.markdown(msg["content"])
 
-    if prompt := st.chat_input("What is up?"):
+    # -----------------------------
+    # USER INPUT
+    # -----------------------------
+    user_input = st.chat_input("Ask something eco-related...")
+
+    if user_input:
+        # show user message
         st.session_state.messages.append(
-            {"role": "user", "content": prompt}
+            {"role": "user", "content": user_input}
         )
         with st.chat_message("user"):
-            st.markdown(prompt)
+            st.markdown(user_input)
 
+        # -----------------------------
+        # OPENAI RESPONSE
+        # -----------------------------
         with st.chat_message("assistant"):
-            stream = client.chat.completions.create(
-                model=st.session_state["openai_model"],
-                messages=[
-                    {"role": m["role"], "content": m["content"]}
-                    for m in st.session_state.messages
-                ],
-                stream=True,
-            )
-            response = st.write_stream(stream)
+            with st.spinner("Thinking 🌍"):
+                response = client.chat.completions.create(
+                    model="gpt-4o-mini",
+                    messages=st.session_state.messages,
+                    temperature=0.6
+                )
+
+                assistant_reply = response.choices[0].message.content
+                st.markdown(assistant_reply)
 
         st.session_state.messages.append(
-            {"role": "assistant", "content": response}
+            {"role": "assistant", "content": assistant_reply}
         )
+
 
 
 
