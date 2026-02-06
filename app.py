@@ -698,38 +698,47 @@ elif st.session_state.page == "GreenScore":
             # -----------------------------
             # INIT PRODUCT CHAT MEMORY
             # -----------------------------
-            if "product_ai_messages" not in st.session_state:
-                st.session_state.product_ai_messages = [
-                    {
-                        "role": "system",
-                        "content": (
-                            "You are a product-focused sustainability assistant.\n\n"
-                            "You help users understand a SINGLE product in depth.\n\n"
-                            "You may answer questions about:\n"
-                            "- why this product scores the way it does\n"
-                            "- ingredient and material impacts\n"
-                            "- microplastics, silicones, petroleum, etc.\n"
-                            "- what makes this product better or worse than alternatives\n"
-                            "- what to look for when buying a greener option next time\n\n"
-                            "Rules:\n"
-                            "- Focus only on purchase-related advice\n"
-                            "- No lifestyle tips\n"
-                            "- Be specific to THIS product\n"
-                            "- Do not invent data\n\n"
-                            f"PRODUCT CONTEXT:\n"
-                            f"Name: {product_input}\n"
-                            f"Category: {r['category']}\n"
-                            f"Eco Score: {r['eco_score']} / 100\n"
-                            f"Carbon: {r['total_carbon_kg']} kg CO₂e\n"
-                            f"Water: {r['total_water_L']} L\n"
-                            f"Energy: {r['total_energy_MJ']} MJ\n"
-                            f"Waste Score: {r['total_waste_score']}\n"
-                            f"Microplastics: {bool(int(r['microplastics']))}\n"
-                            f"Silicones: {bool(int(r['silicones']))}\n"
-                            f"Petroleum-derived: {bool(int(r['petroleum']))}"
-                        ),
-                    }
-                ]
+            # -----------------------------
+# INIT / RESET PRODUCT CHAT MEMORY
+# -----------------------------
+          if (
+                 "product_ai_messages" not in st.session_state
+                 or st.session_state.get("product_chat_product") != product_input
+              ):
+          st.session_state.product_chat_product = product_input
+ 
+          st.session_state.product_ai_messages = [
+           {
+            "role": "system",
+            "content": (
+                "You are a product-focused sustainability assistant.\n\n"
+                "You help users understand a SINGLE product in depth.\n\n"
+                "You may answer questions about:\n"
+                "- why this product scores the way it does\n"
+                "- ingredient and material impacts\n"
+                "- microplastics, silicones, petroleum, etc.\n"
+                "- what makes this product better or worse than alternatives\n"
+                "- what to look for when buying a greener option next time\n\n"
+                "Rules:\n"
+                "- Focus only on purchase-related advice\n"
+                "- No lifestyle tips\n"
+                "- Be specific to THIS product\n"
+                "- Do not invent data\n\n"
+                f"PRODUCT CONTEXT:\n"
+                f"Name: {product_input}\n"
+                f"Category: {r['category']}\n"
+                f"Eco Score: {r['eco_score']} / 100\n"
+                f"Carbon: {r['total_carbon_kg']} kg CO₂e\n"
+                f"Water: {r['total_water_L']} L\n"
+                f"Energy: {r['total_energy_MJ']} MJ\n"
+                f"Waste Score: {r['total_waste_score']}\n"
+                f"Microplastics: {bool(int(r['microplastics']))}\n"
+                f"Silicones: {bool(int(r['silicones']))}\n"
+                f"Petroleum-derived: {bool(int(r['petroleum']))}"
+                ),
+         }
+       ]
+
 
             # -----------------------------
             # DISPLAY CHAT
