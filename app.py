@@ -430,7 +430,7 @@ elif st.session_state.page == "GreenScore":
         st.session_state.logged_keys = set()
     
     # -----------------------------
-    # CAMERA SCAN (ALWAYS VISIBLE)
+    # Step 7: USER INPUT + DISPLAY
     # -----------------------------
     st.subheader("📸 Scan Product (optional)")
     
@@ -450,23 +450,23 @@ elif st.session_state.page == "GreenScore":
         st.session_state.selected_product = matched_name
     
     # -----------------------------
-    # PRODUCT SEARCH (ALWAYS VISIBLE)
+    # PRODUCT SEARCH (SINGLE SOURCE OF TRUTH)
     # -----------------------------
     product_options = sorted(summary_df["name"].unique())
     preselected_product = None
     
     # Priority:
     # 1. Alternative click
-    # 2. Previously selected product (including scanned)
+    # 2. Previously selected product
     if "selected_alternative" in st.session_state:
         preselected_product = st.session_state.selected_alternative
     elif "selected_product" in st.session_state:
         preselected_product = st.session_state.selected_product
     
     # -----------------------------
-    # SINGLE SELECTBOX
+    # SINGLE SELECTBOX (NO DOUBLE CLICK)
     # -----------------------------
-    if preselected_product and preselected_product in product_options:
+    if preselected_product in product_options:
         product_input = st.selectbox(
             "🔍 Search for a product",
             options=product_options,
@@ -787,6 +787,11 @@ elif st.session_state.page == "GreenScore":
                             st.session_state['selected_alternative'] = alt['name']
                             st.rerun()
 
+
+
+            # =============================
+            # AI DEEP DIVE EXPLANATION
+            # =============================
             # =============================
             # AI PRODUCT CHATBOT
             # =============================
@@ -882,7 +887,6 @@ elif st.session_state.page == "GreenScore":
                 st.session_state.product_ai_messages.append(
                     {"role": "assistant", "content": ai_reply}
                 )
-
 
 
 
