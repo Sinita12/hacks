@@ -426,54 +426,79 @@ elif st.session_state.page == "GreenScore":
             "Product", "Category", "Eco Score",
             "Carbon (kg)", "Water (L)", "Energy (MJ)", "Waste Score"
         ])
-
     if "logged_keys" not in st.session_state:
         st.session_state.logged_keys = set()
-
-  
-    if 'selected_alternative' in st.session_state:
-        product_input = st.session_state['selected_alternative']
-        del st.session_state['selected_alternative']  # Clear it after using
-    else:
-        product_input = None
-
-    # -----------------------------
-    # Step 7: USER INPUT + DISPLAY
-    # -----------------------------
-#If coming from alternative click, pre-select i
-    if product_input:
-        default_index = list(sorted(summary_df['name'].unique())).index(product_input)
-    else:
-        default_index = None
     
-    product_input = st.selectbox(
-        "🔍 Search for a product",
-        options=sorted(summary_df['name'].unique()),
-        index=default_index,
-        placeholder="Start typing to search..."
-    )
+    # -----------------------------
+    # CAMERA SCAN (ALWAYS VISIBLE)
+    # -----------------------------
+    st.subheader("📸 Scan Product (optional)")
+    
+    image_file = st.camera_input("Take a photo of the product")
+    
+    if image_file:
+        image = Image.open(image_file)
+    
+        with st.spinner("Reading packaging text..."):
+            all_text = ocr_image(image)
+        
+        with st.spinner("Identifying product..."):
+            detected_name = extract_product_name(all_text)
+            matched_name, confidence = fuzzy_match_product(detected_name, summary_df)
+        
+        st.success(f"Detected: {matched_name}")
+        st.session_state.selected_product = matched_name
+    
+    # -----------------------------
+    # PRODUCT SEARCH (ALWAYS VISIBLE)
+    # -----------------------------
+    product_options = sorted(summary_df["name"].unique())
+    preselected_product = None
+    
+    # Priority:
+    # 1. Alternative click
+    # 2. Previously selected product (including scanned)
+    if "selected_alternative" in st.session_state:
+        preselected_product = st.session_state.selected_alternative
+    elif "selected_product" in st.session_state:
+        preselected_product = st.session_state.selected_product
+    
+    # -----------------------------
+    # SINGLE SELECTBOX
+    # -----------------------------
+    if preselected_product and preselected_product in product_options:
+        product_input = st.selectbox(
+            "🔍 Search for a product",
+            options=product_options,
+            index=product_options.index(preselected_product),
+            key="product_selectbox",
+            placeholder="Start typing to search..."
+        )
+    else:
+        product_input = st.selectbox(
+            "🔍 Search for a product",
+            options=product_options,
+            index=None,
+            key="product_selectbox",
+            placeholder="Start typing to search..."
+        )
+    
+    # -----------------------------
+    # CLEAN UP ONE-TIME FLAGS
+    # -----------------------------
+    if "selected_alternative" in st.session_state:
+        del st.session_state["selected_alternative"]
+    
+    # -----------------------------
+    # PERSIST SELECTION (IMMEDIATE)
+    # -----------------------------
     if product_input:
-        result = summary_df[summary_df['name'] == product_input]
         st.session_state.selected_product = product_input
-    
+        result = summary_df[summary_df["name"] == product_input]
         if result.empty:
             st.error("❌ Product not found in database.")
         else:
             r = result.iloc[0]
-            log_key = f"{product_input}_{r['eco_score']}"
-
-            if log_key not in st.session_state.logged_keys:
-                st.session_state.impact_history.loc[len(st.session_state.impact_history)] = {
-                    "Product": product_input,
-                    "Category": r["category"],
-                    "Eco Score": r["eco_score"],
-                    "Carbon (kg)": r["total_carbon_kg"],
-                    "Water (L)": r["total_water_L"],
-                    "Energy (MJ)": r["total_energy_MJ"],
-                    "Waste Score": r["total_waste_score"]
-                }
-                st.session_state.logged_keys.add(log_key)
-    
             st.divider()
             
             # ---------- ECO SCORE ----------
@@ -486,33 +511,33 @@ elif st.session_state.page == "GreenScore":
                 # Large score display
                 st.markdown(f"""
                     <div style="
-                        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-                        border-radius: 20px;
+                        background: linear-gradient(135deg, #2d5016 0%, #3d6b1f 100%);
+                        border-radius: 18px;
                         padding: 30px;
                         text-align: center;
-                        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+                        box-shadow: 0 8px 20px rgba(45, 80, 22, 0.3);
                     ">
-                        <h1 style="color: white; margin: 0; font-size: 4em;">{r['eco_score']}</h1>
-                        <p style="color: rgba(255,255,255,0.9); margin: 5px 0 0 0; font-size: 1.1em;">out of 100</p>
+                        <h1 style="color: #f5f1e8; margin: 0; font-size: 4em;">{r['eco_score']}</h1>
+                        <p style="color: #c5d4b8; margin: 5px 0 0 0; font-size: 1.1em;">out of 100</p>
                     </div>
                 """, unsafe_allow_html=True)
             
             with score_col2:
                 # Score interpretation
                 if r['eco_score'] >= 80:
-                    badge_color = "#10b981"
+                    badge_color = "#2d5016"
                     badge_text = "Excellent"
                     emoji = "🌟"
                 elif r['eco_score'] >= 60:
-                    badge_color = "#3b82f6"
+                    badge_color = "#4d7b2f"
                     badge_text = "Good"
                     emoji = "👍"
                 elif r['eco_score'] >= 40:
-                    badge_color = "#f59e0b"
+                    badge_color = "#d4a373"
                     badge_text = "Moderate"
                     emoji = "⚠️"
                 else:
-                    badge_color = "#ef4444"
+                    badge_color = "#a85232"
                     badge_text = "Needs Improvement"
                     emoji = "❗"
                 
@@ -520,18 +545,18 @@ elif st.session_state.page == "GreenScore":
                     <div style="padding: 20px 0;">
                         <div style="
                             background-color: {badge_color};
-                            color: white;
+                            color: #f5f1e8;
                             padding: 15px 25px;
-                            border-radius: 12px;
+                            border-radius: 14px;
                             display: inline-block;
                             font-size: 1.3em;
                             font-weight: bold;
                             margin-bottom: 15px;
-                            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+                            box-shadow: 0 4px 12px rgba(45, 80, 22, 0.2);
                         ">
                             {emoji} {badge_text}
                         </div>
-                        <p style="color: #6b7280; margin-top: 10px; line-height: 1.6;">
+                        <p style="color: #9cb380; margin-top: 10px; line-height: 1.6;">
                             This score reflects the overall environmental impact across carbon, water, energy, and waste metrics.
                         </p>
                     </div>
@@ -541,16 +566,16 @@ elif st.session_state.page == "GreenScore":
             st.markdown(f"""
                 <div style="margin: 20px 0;">
                     <div style="
-                        background-color: #e5e7eb;
-                        border-radius: 10px;
-                        height: 12px;
+                        background-color: #3d4a35;
+                        border-radius: 12px;
+                        height: 14px;
                         overflow: hidden;
                     ">
                         <div style="
-                            background: linear-gradient(90deg, #10b981 0%, #3b82f6 50%, #f59e0b 100%);
+                            background: linear-gradient(90deg, #2d5016 0%, #4d7b2f 50%, #7c9070 100%);
                             width: {r['eco_score']}%;
                             height: 100%;
-                            border-radius: 10px;
+                            border-radius: 12px;
                             transition: width 0.5s ease;
                         "></div>
                     </div>
@@ -567,124 +592,202 @@ elif st.session_state.page == "GreenScore":
             with col1:
                 st.markdown(f"""
                     <div style="
-                        background-color: #fef3c7;
-                        border-left: 4px solid #f59e0b;
-                        border-radius: 8px;
+                        background: linear-gradient(135deg, #f5f1e8 0%, #faf8f3 100%);
+                        border-left: 4px solid #d4a373;
+                        border-radius: 12px;
                         padding: 20px 15px;
                         text-align: center;
+                        box-shadow: 0 4px 12px rgba(45, 80, 22, 0.1);
                     ">
                         <div style="font-size: 2em; margin-bottom: 10px;">🌫</div>
-                        <div style="color: #78716c; font-size: 0.85em; margin-bottom: 5px;">Carbon Footprint</div>
-                        <div style="color: #292524; font-size: 1.5em; font-weight: bold;">{r['total_carbon_kg']}</div>
-                        <div style="color: #78716c; font-size: 0.75em;">kg CO₂e</div>
+                        <div style="color: #5d4e37; font-size: 0.85em; margin-bottom: 5px; font-weight: 600;">Carbon Footprint</div>
+                        <div style="color: #2d1810; font-size: 1.5em; font-weight: bold;">{r['total_carbon_kg']}</div>
+                        <div style="color: #5d4e37; font-size: 0.75em;">kg CO₂e</div>
                     </div>
                 """, unsafe_allow_html=True)
     
             with col2:
                 st.markdown(f"""
                     <div style="
-                        background-color: #dbeafe;
-                        border-left: 4px solid #3b82f6;
-                        border-radius: 8px;
+                        background: linear-gradient(135deg, #e8f5e9 0%, #f1f8f3 100%);
+                        border-left: 4px solid #4d7b2f;
+                        border-radius: 12px;
                         padding: 20px 15px;
                         text-align: center;
+                        box-shadow: 0 4px 12px rgba(45, 80, 22, 0.1);
                     ">
                         <div style="font-size: 2em; margin-bottom: 10px;">💧</div>
-                        <div style="color: #475569; font-size: 0.85em; margin-bottom: 5px;">Water Usage</div>
-                        <div style="color: #1e293b; font-size: 1.5em; font-weight: bold;">{r['total_water_L']}</div>
-                        <div style="color: #475569; font-size: 0.75em;">Liters</div>
+                        <div style="color: #2d5016; font-size: 0.85em; margin-bottom: 5px; font-weight: 600;">Water Usage</div>
+                        <div style="color: #1a3d0f; font-size: 1.5em; font-weight: bold;">{r['total_water_L']}</div>
+                        <div style="color: #2d5016; font-size: 0.75em;">Liters</div>
                     </div>
                 """, unsafe_allow_html=True)
     
             with col3:
                 st.markdown(f"""
                     <div style="
-                        background-color: #fef9c3;
-                        border-left: 4px solid #eab308;
-                        border-radius: 8px;
+                        background: linear-gradient(135deg, #fff9e6 0%, #fffcf0 100%);
+                        border-left: 4px solid #d4a373;
+                        border-radius: 12px;
                         padding: 20px 15px;
                         text-align: center;
+                        box-shadow: 0 4px 12px rgba(45, 80, 22, 0.1);
                     ">
                         <div style="font-size: 2em; margin-bottom: 10px;">⚡</div>
-                        <div style="color: #78716c; font-size: 0.85em; margin-bottom: 5px;">Energy Use</div>
-                        <div style="color: #292524; font-size: 1.5em; font-weight: bold;">{r['total_energy_MJ']}</div>
-                        <div style="color: #78716c; font-size: 0.75em;">MJ</div>
+                        <div style="color: #6b4423; font-size: 0.85em; margin-bottom: 5px; font-weight: 600;">Energy Use</div>
+                        <div style="color: #3d2815; font-size: 1.5em; font-weight: bold;">{r['total_energy_MJ']}</div>
+                        <div style="color: #6b4423; font-size: 0.75em;">MJ</div>
                     </div>
                 """, unsafe_allow_html=True)
     
             with col4:
                 st.markdown(f"""
                     <div style="
-                        background-color: #e0e7ff;
-                        border-left: 4px solid #6366f1;
-                        border-radius: 8px;
+                        background: linear-gradient(135deg, #f5f1e8 0%, #faf8f3 100%);
+                        border-left: 4px solid #7c9070;
+                        border-radius: 12px;
                         padding: 20px 15px;
                         text-align: center;
+                        box-shadow: 0 4px 12px rgba(45, 80, 22, 0.1);
                     ">
                         <div style="font-size: 2em; margin-bottom: 10px;">🗑</div>
-                        <div style="color: #475569; font-size: 0.85em; margin-bottom: 5px;">Waste Impact</div>
-                        <div style="color: #1e293b; font-size: 1.5em; font-weight: bold;">{r['total_waste_score']}</div>
-                        <div style="color: #475569; font-size: 0.75em;">Score</div>
+                        <div style="color: #3d4a35; font-size: 0.85em; margin-bottom: 5px; font-weight: 600;">Waste Impact</div>
+                        <div style="color: #1a2318; font-size: 1.5em; font-weight: bold;">{r['total_waste_score']}</div>
+                        <div style="color: #3d4a35; font-size: 0.75em;">Score</div>
                     </div>
                 """, unsafe_allow_html=True)
+
+            # ---------- INGREDIENT FLAGS (only show present ones) ----------
+            st.markdown("### 🧪 Ingredient Flags")
+            
+            flag_defs = [
+                {
+                    "key": "microplastics",
+                    "title": "Microplastics",
+                    "emoji": "🧬",
+                    "present": int(r["microplastics"]) == 1,
+                    "why": "Microplastics can persist in waterways and harm aquatic life when washed down drains."
+                },
+                {
+                    "key": "silicones",
+                    "title": "Silicones",
+                    "emoji": "🧴",
+                    "present": int(r["silicones"]) == 1,
+                    "why": "Some silicones are persistent and can contribute to long-lasting pollution in the environment."
+                },
+                {
+                    "key": "petroleum",
+                    "title": "Petroleum-derived",
+                    "emoji": "🛢️",
+                    "present": int(r["petroleum"]) == 1,
+                    "why": "Petroleum-based ingredients come from fossil fuels, increasing reliance on non-renewable resources."
+                },
+            ]
+            
+            present_flags = [f for f in flag_defs if f["present"]]
+            
+            if present_flags:
+                cols = st.columns(len(present_flags))
+                for col, flag in zip(cols, present_flags):
+                    with col:
+                        st.markdown(f"""
+                            <div style="
+                                background: linear-gradient(135deg, #fff4e6 0%, #f5f1e8 100%);
+                                border-left: 4px solid #d4a373;
+                                border-radius: 12px;
+                                padding: 18px 14px;
+                                box-shadow: 0 4px 12px rgba(45, 80, 22, 0.10);
+                                min-height: 155px;
+                            ">
+                                <div style="font-size: 1.8em; margin-bottom: 6px;">{flag["emoji"]}</div>
+                                <div style="font-weight: 700; font-size: 1.05em; color: #1a2318;">{flag["title"]} — Present</div>
+                                <div style="margin-top: 10px; font-size: 0.9em; line-height: 1.45; color: #3d4a35;">
+                                    {flag["why"]}
+                                </div>
+                            </div>
+                        """, unsafe_allow_html=True)
+            else:
+                st.success("✅ No ingredient red flags detected for this product (based on our database).")
     
             st.markdown("<br>", unsafe_allow_html=True)
     
             # ---------- OPTIONAL DETAILS ----------
             with st.expander("📊 View detailed data"):
                 st.dataframe(result, use_container_width=True)
-
-            # ✅ FIX 1: category must be INSIDE else block# =============================
-            # GREENER ALTERNATIVES
-            # =============================
+        
+            st.divider()
+            
+            st.subheader("🛒 Purchase Logging")
+            
+            if st.button("✅ Log this product as purchased", use_container_width=True):
+                log_key = f"{product_input}_{r['eco_score']}"
+            
+                if log_key not in st.session_state.logged_keys:
+                    st.session_state.impact_history.loc[len(st.session_state.impact_history)] = {
+                        "Product": product_input,
+                        "Category": r["category"],
+                        "Eco Score": r["eco_score"],
+                        "Carbon (kg)": r["total_carbon_kg"],
+                        "Water (L)": r["total_water_L"],
+                        "Energy (MJ)": r["total_energy_MJ"],
+                        "Waste Score": r["total_waste_score"]
+                    }
+                    st.session_state.logged_keys.add(log_key)
+                    st.success("🎉 Product logged! Your Impact Dashboard has been updated.")
+                else:
+                    st.info("This product is already logged as purchased.")
+            
+            
             st.subheader("🌿 Greener Alternatives")
             st.caption("Click any product to view its full eco score")
             
             alternatives = get_greener_alternatives(product_input, summary_df, max_alternatives=5)
             
-            if alternatives:
+            # ✅ CASE 1: NO greener alternatives
+            if not alternatives:
+                st.success("🎉 Great choice! This is already one of the greenest options in its category.")
+            
+            # ✅ CASE 2: Greener alternatives exist
+            else:
                 for alt in alternatives:
                     col1, col2 = st.columns([4, 1])
-                    
+            
                     with col1:
                         st.markdown(
                             f"""
                             <div style="
-                                background: linear-gradient(135deg, #E8F5E9 0%, #F5F1E8 100%);
-                                border-left: 4px solid #66BB6A;
-                                border-radius: 12px;
-                                padding: 16px;
-                                margin-bottom: 12px;
-                                cursor: pointer;
-                                transition: all 0.3s ease;
-                                box-shadow: 0 2px 6px rgba(46, 125, 50, 0.1);
+                                background: linear-gradient(135deg, #e8f5e9 0%, #f5f1e8 100%);
+                                border-left: 5px solid #2d5016;
+                                border-radius: 14px;
+                                padding: 18px;
+                                margin-bottom: 14px;
+                                box-shadow: 0 4px 12px rgba(45, 80, 22, 0.15);
                             ">
                                 <div style="display: flex; justify-content: space-between; align-items: center;">
                                     <div>
-                                        <strong style="color:#2E7D32; font-size:17px;">{alt['name']}</strong><br>
-                                        <span style="color:#66BB6A; font-size:14px;">✨ {alt['improvement']}</span>
+                                        <strong style="color:#1a3d0f; font-size:17px;">{alt['name']}</strong><br>
+                                        <span style="color:#4d7b2f; font-size:14px;">✨ {alt['improvement']}</span>
                                     </div>
                                     <div style="text-align: right;">
-                                        <div style="color:#2E7D32; font-size:24px; font-weight:700;">{alt['eco_score']}</div>
-                                        <div style="color:#616161; font-size:12px;">+{alt['score_diff']:.1f} points</div>
+                                        <div style="color:#2d5016; font-size:26px; font-weight:700;">
+                                            {alt['eco_score']}
+                                        </div>
+                                        <div style="color:#5d4e37; font-size:12px;">
+                                            +{alt['score_diff']:.1f} points
+                                        </div>
                                     </div>
                                 </div>
                             </div>
                             """,
                             unsafe_allow_html=True
                         )
-                    
+            
                     with col2:
                         if st.button("View →", key=f"view_{alt['name']}", use_container_width=True):
                             st.session_state['selected_alternative'] = alt['name']
                             st.rerun()
-                        else:
-                            st.info("🎉 Great choice! This is already one of the greenest options in its category.")
 
             # =============================
-            # AI PRODUCT CHATBOT
-            # =============================
-            s# =============================
             # AI PRODUCT CHATBOT
             # =============================
             st.divider()
@@ -779,7 +882,6 @@ elif st.session_state.page == "GreenScore":
                 st.session_state.product_ai_messages.append(
                     {"role": "assistant", "content": ai_reply}
                 )
-                    
 
 
 
