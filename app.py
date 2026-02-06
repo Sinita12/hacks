@@ -678,8 +678,100 @@ elif st.session_state.page == "GreenScore":
                         if st.button("View →", key=f"view_{alt['name']}", use_container_width=True):
                             st.session_state['selected_alternative'] = alt['name']
                             st.rerun()
-            else:
-                st.info("🎉 Great choice! This is already one of the greenest options in its category.")
+                        else:
+                            st.info("🎉 Great choice! This is already one of the greenest options in its category.")
+
+            # =============================
+            # AI PRODUCT CHATBOT
+            # =============================
+            st.divider()
+            st.subheader("🤖 AI Insight: Explore This Product")
+
+            st.caption(
+                "Ask in-depth questions about this product’s ingredients, impacts, and "
+                "how to make better purchase choices."
+            )
+
+            from openai import OpenAI
+            client = OpenAI(api_key=st.secrets["OpenAIKey"])
+
+            # -----------------------------
+            # INIT PRODUCT CHAT MEMORY
+            # -----------------------------
+            if "product_ai_messages" not in st.session_state:
+                st.session_state.product_ai_messages = [
+                    {
+                        "role": "system",
+                        "content": (
+                            "You are a product-focused sustainability assistant.\n\n"
+                            "You help users understand a SINGLE product in depth.\n\n"
+                            "You may answer questions about:\n"
+                            "- why this product scores the way it does\n"
+                            "- ingredient and material impacts\n"
+                            "- microplastics, silicones, petroleum, etc.\n"
+                            "- what makes this product better or worse than alternatives\n"
+                            "- what to look for when buying a greener option next time\n\n"
+                            "Rules:\n"
+                            "- Focus only on purchase-related advice\n"
+                            "- No lifestyle tips\n"
+                            "- Be specific to THIS product\n"
+                            "- Do not invent data\n\n"
+                            f"PRODUCT CONTEXT:\n"
+                            f"Name: {product_input}\n"
+                            f"Category: {r['category']}\n"
+                            f"Eco Score: {r['eco_score']} / 100\n"
+                            f"Carbon: {r['total_carbon_kg']} kg CO₂e\n"
+                            f"Water: {r['total_water_L']} L\n"
+                            f"Energy: {r['total_energy_MJ']} MJ\n"
+                            f"Waste Score: {r['total_waste_score']}\n"
+                            f"Microplastics: {bool(int(r['microplastics']))}\n"
+                            f"Silicones: {bool(int(r['silicones']))}\n"
+                            f"Petroleum-derived: {bool(int(r['petroleum']))}"
+                        ),
+                    }
+                ]
+
+            # -----------------------------
+            # DISPLAY CHAT
+            # -----------------------------
+            for msg in st.session_state.product_ai_messages[1:]:
+                with st.chat_message(msg["role"]):
+                    st.markdown(msg["content"])
+
+            # -----------------------------
+            # USER QUESTION INPUT
+            # -----------------------------
+            product_question = st.chat_input(
+                "Ask about ingredients, impacts, or better alternatives for this product…"
+            )
+
+            if product_question:
+                st.session_state.product_ai_messages.append(
+                    {"role": "user", "content": product_question}
+                )
+
+                with st.chat_message("user"):
+                    st.markdown(product_question)
+
+                # -----------------------------
+                # AI RESPONSE
+                # -----------------------------
+                with st.chat_message("assistant"):
+                    with st.spinner("Thinking about this product… 🌍"):
+                        response = client.chat.completions.create(
+                            model="gpt-4o-mini",
+                            temperature=0.4,
+                            messages=st.session_state.product_ai_messages,
+                        )
+
+                        ai_reply = response.choices[0].message.content
+                        st.markdown(ai_reply)
+
+                st.session_state.product_ai_messages.append(
+                    {"role": "assistant", "content": ai_reply}
+                )
+
+                    
 
 
 
